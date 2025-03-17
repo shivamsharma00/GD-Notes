@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sticky Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Roboto&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Main Content Area -->
+  <div id="text-box-container">
+    <div class="text-box" id="text-box-1" contenteditable="true" spellcheck="true"></div>
+    <div class="text-box" id="text-box-2" contenteditable="true" spellcheck="true"></div>
+    <div class="text-box" id="text-box-3" contenteditable="true" spellcheck="true"></div>
+    <div class="text-box" id="text-box-4" contenteditable="true" spellcheck="true"></div>
+  </div>
+
+  <!-- Status Bar -->
+  <div id="status-bar">
+    <div id="status-label">Status: Ready</div>
+    <button id="theme-toggle">
+        <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
+    </button>
+    <button id="settings-btn">
+        <img src="assets/settings.png" alt="Settings">
+    </button>
+    <button id="minimize-btn">
+        <img src="assets/minimize.png" alt="Minimize">
+    </button>
+    <button id="close-btn">
+        <img src="assets/close-button.png" alt="Close">
+    </button>
+  </div>
+  <!-- "designed by {Author's Name} from Flaticon -->
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal hidden">
+  <div class="modal-content">
+    <header class="modal-header">
+      <h2>Settings</h2>
+      <button id="close-settings" class="close-button" aria-label="Close">&times;</button>
+    </header>
+    <div class="settings-grid">
+      <div class="settings-column">
+        <h3>Appearance</h3>
+        <div class="setting-item">
+          <label for="font-select">Font</label>
+          <select id="font-select">
+            <option value="'Inter', sans-serif">Inter</option>
+            <option value="'Roboto', sans-serif">Roboto</option>
+            <option value="'Open Sans', sans-serif">Open Sans</option>
+            <option value="'Lato', sans-serif">Lato</option>
+            <option value="'Montserrat', sans-serif">Montserrat</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label for="font-size-select">Font Size</label>
+          <select id="font-size-select">
+            <option value="12px">12px</option>
+            <option value="14px">14px</option>
+            <option value="16px" selected>16px</option>
+            <option value="18px">18px</option>
+            <option value="20px">20px</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label for="shadow-color">Status Bar Shadow</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="shadow-color" value="#eb280a">
+            <span class="color-preview"></span>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label for="text-box-theme">Text Box Theme</label>
+          <select id="text-box-theme">
+            <option value="default">Default</option>
+            <option value="warm">Warm</option>
+            <option value="cool">Cool</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="settings-column">
+        <h3>API Keys</h3>
+        <div class="setting-item">
+          <label for="telegram-chat-id">Telegram Chat ID</label>
+          <input type="text" id="telegram-chat-id" placeholder="Enter Telegram Chat ID">
+        </div>
+        <div class="setting-item">
+          <label for="openai-api-key">OpenAI API Key</label>
+          <input type="password" id="openai-api-key" placeholder="Enter OpenAI API Key">
+        </div>
+        <div class="setting-item">
+          <label for="perplexity-api-key">Perplexity API Key</label>
+          <input type="password" id="perplexity-api-key" placeholder="Enter Perplexity API Key">
+        </div>
+      </div>
+    </div>
+    
+    <footer class="settings-footer">
+      <button id="save-settings">Save Changes</button>
+    </footer>
+  </div>
+</div>
+  <script src="renderer.js"></script>
+</body>
+</html>
