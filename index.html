@@ -3,9 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sticky Notes</title>
+
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="
+    default-src 'self'; 
+    script-src 'self';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    connect-src 'self';
+    "
+  />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Roboto&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Open+Sans&family=Roboto&family=Space+Mono&family=Inconsolata&family=Fira+Mono&family=IBM+Plex+Mono&family=Source+Code+Pro&family=Anonymous+Pro&family=Ubuntu+Mono&display=swap" rel="stylesheet">
+
+  <!-- <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Open+Sans&family=Roboto&display=swap" rel="stylesheet"> -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -20,9 +35,15 @@
   <!-- Status Bar -->
   <div id="status-bar">
     <div id="status-label">Status: Ready</div>
-    <button id="theme-toggle">
+    <div class="theme-toggle-wrapper">
+      <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
+      <label for="theme-toggle" class="theme-toggle-label">
+          <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
+      </label>
+  </div>
+    <!-- <button id="theme-toggle">
         <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
-    </button>
+    </button> -->
     <button id="settings-btn">
         <img src="assets/settings.png" alt="Settings">
     </button>
@@ -51,7 +72,17 @@
             <option value="'Roboto', sans-serif">Roboto</option>
             <option value="'Open Sans', sans-serif">Open Sans</option>
             <option value="'Lato', sans-serif">Lato</option>
-            <option value="'Montserrat', sans-serif">Montserrat</option>
+            <option value="'Fira Code', monospace">Fira Code</option>
+            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+            <option value="'Space Mono', monospace">Space Mono</option>
+            <option value="'Inconsolata', monospace">Inconsolata</option>
+            <option value="'Fira Mono', monospace">Fira Mono</option>
+            <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+            <option value="'Source Code Pro', monospace">Source Code Pro</option>
+            <option value="'Anonymous Pro', monospace">Anonymous Pro</option>
+            <option value="'Hack', monospace">Hack</option>
+            <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
+            <option value="'Fira Mono', monospace">Fira Mono</option>
           </select>
         </div>
         <div class="setting-item">
@@ -77,6 +108,9 @@
             <option value="default">Default</option>
             <option value="warm">Warm</option>
             <option value="cool">Cool</option>
+            <option value="nature">Nature</option>
+            <option value="sunset">Sunset</option>
+            <option value="blue">Blue</option>
           </select>
         </div>
       </div>
@@ -103,6 +137,6 @@
     </footer>
   </div>
 </div>
-  <script src="renderer.js"></script>
+  <script type="module" src="renderer.js"></script>
 </body>
 </html>
