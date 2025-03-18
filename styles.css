@@ -9,40 +9,42 @@
   --toggle-bg-light: #ccc;
   --toggle-bg-dark: #2196F3; 
   --font-family: 'Helvetica Neue', sans-serif;
-  
+  --status-label-color: #000000;
   --status-shadow-color: #eb280a;
+
+  --modal-background-color: #ffffff;
+  --modal-text-color: #000000;
+  /* --input-background-color: #f6f8fa; */
+  --input-background-color: #ffffff;
+  --input-text-color: #000000;
+  --input-border-color: #d0d7de;
+
+  --text-color-secondary: #000000;
+  --dropdown-bg: #ffffff;
+  --dropdown-text: #000000;
 }
 
 /* Dark Mode Variables */
 body.dark-mode {
   --background-color: #ffffff00;
-  --text-color: #000000;
+  --text-color: #FFFFFF;
   --title-bar-color: #090f18;
   --text-box-bg: #080d14;
   --text-box-color: #f0f0f0;
   --toggle-bg-light: #090f18; 
   --toggle-bg-dark: #ccc;
-}
+  --status-label-color: #ffffff;
 
-/* :root {
-  --background-color: #f0f0f0;
-  --text-color: #000000;
-  --title-bar-color: #e0e0e0;
-  --text-box-bg: #ffffff;
-  --text-box-color: #000000;
-  --font-family: 'Helvetica Neue', sans-serif;
-  --status-shadow-color: #eb280a;
-}
+  --modal-background-color: #1e1e1e;
+  --modal-text-color: #ffffff;
+  --input-background-color: #2e2e2e;
+  --input-text-color: #ffffff;
+  --input-border-color: #3e3e3e;
 
-body.dark-mode {
-  --background-color: #121212;
-  --text-color: #ffffff;
-  --title-bar-color: #1e1e1e;
-  --text-box-bg: #1e1e1e;
-  --text-box-color: #ffffff;
-  --toggle-bg-light: #3c3c3c;
-  --toggle-bg-dark: #cccccc;
-} */
+  --text-color-secondary: #ffffff;
+  --dropdown-bg: #2e2e2e;
+  --dropdown-text: #ffffff;
+}
 
 /* General Styles */
 body {
@@ -83,7 +85,7 @@ body {
     padding: 8px;
 
     background-color: var(--text-box-bg);
-    color: var(--text-box-color);
+    color: var(--text-color);
     font-size: var(--font-size);
     font-family: var(--font-family);
     border-radius: 5px;
@@ -161,6 +163,7 @@ body {
     font-size: 9px;
     text-align: left;
     flex-grow: 1;
+    color: var(--status-label-color);
   }
 
   .switch {
@@ -206,6 +209,7 @@ body {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
+    /* background-color: var(--modal-background-color); */
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
@@ -219,8 +223,10 @@ body {
 
   .modal-content {
     font-family:'Inter', sans-serif;
-    background-color: var(--settings-background-color);
-    color: var(--text-color);
+
+    background-color: var(--modal-background-color);
+    color: var(--modal-text-color);
+
     padding: 20px;
     border-radius: 10px;
     width: 90%;
@@ -239,7 +245,7 @@ body {
     font-size: 18px;
     font-weight: 600;
     margin: 0;
-    color: var(--text-color-secondary, #000000);
+    color: var(--text-color-secondary);
   }
   
   .close-button {
@@ -281,7 +287,7 @@ body {
   .setting-item label {
     font-size: 11px;
     font-weight: 500;
-    color: var(--text-color-secondary, #000000);
+    color: var(--text-color-secondary);
     flex: 1;
     margin-right: 10px;
     margin-bottom: 10px;
@@ -292,12 +298,21 @@ body {
 .setting-item input[type="password"] {
   width: 60%;
   padding: 6px 8px;
-  border: 1px solid var(--border-color, #d0d7de);
+  border: 1px solid var(--input-border-color);
   border-radius: 4px;
   font-size: 8px;
-  background-color: var(--input-background, #f6f8fa);
-  color: var(--text-color);
+  background-color: orange;
+  /* background-color: var(--dropdown-bg); */
+  /* color: var(--input-text-color); */
+  color: var(--dropdown-text);
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.setting-item select option {
+  /* background-color: var(--input-background-color);
+  color: var(--input-text-color); */
+  background-color: orange;
+  color: var(--dropdown-text);
 }
 
 .setting-item select:focus,
@@ -327,7 +342,7 @@ body {
   height: 20px;
   border-radius: 3px;
   margin-left: 6px;
-  border: 1px solid var(--border-color, #d0d7de);
+  border: 1px solid var(--input-border-color);
 }
 
   .settings-footer {
@@ -371,7 +386,7 @@ body {
   .setting-item select,
   .setting-item input[type="text"],
   .setting-item input[type="password"] {
-    background-color: var(--input-background-dark, #21262d);
+    background-color: var(--input-background-dark, #21262d) !important;
     border-color: var(--border-color-dark, #30363d);
   }
 
@@ -397,6 +412,7 @@ body {
     cursor: pointer;
     padding: 0px 0px;
     margin-left: 10px;
+    margin-right: 10px;
     border-radius: 0%;
     transition: filter 0.2s;
     color: var(--text-color);
@@ -427,4 +443,54 @@ body.dark-mode #close-btn img {
 }
 #close-btn:hover img {
   filter: brightness(0) saturate(100%) invert(15%) sepia(95%) saturate(6392%) hue-rotate(359deg) brightness(94%) contrast(112%) !important;
+}
+
+/* Update these styles */
+.theme-toggle-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.theme-toggle-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.theme-toggle-label {
+    cursor: pointer;
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    z-index: 3;
+    -webkit-app-region: no-drag;
+}
+
+.theme-toggle-label img {
+    width: 15px;
+    height: 15px;
+    border: none;
+    background: none;
+    z-index: 3;
+    -webkit-app-region: no-drag;
+    transition: filter 0.5s ease;
+}
+
+/* Update the hover effects */
+.theme-toggle-label:hover img {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(118%) contrast(119%) !important;
+}
+
+/* Update dark mode filters */
+body:not(.dark-mode) .theme-toggle-label img {
+    filter: invert(0);
+}
+
+body.dark-mode .theme-toggle-label img {
+    filter: invert(1);
 }
