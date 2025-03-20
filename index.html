@@ -25,34 +25,55 @@
 </head>
 <body>
   <!-- Main Content Area -->
-  <div id="text-box-container">
-    <div class="text-box" id="text-box-1" contenteditable="true" spellcheck="true"></div>
-    <div class="text-box" id="text-box-2" contenteditable="true" spellcheck="true"></div>
-    <div class="text-box" id="text-box-3" contenteditable="true" spellcheck="true"></div>
-    <div class="text-box" id="text-box-4" contenteditable="true" spellcheck="true"></div>
-  </div>
+  <div id="text-box-container"></div>
 
   <!-- Status Bar -->
   <div id="status-bar">
-    <div id="status-label">Status: Ready</div>
-    <div class="theme-toggle-wrapper">
-      <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
-      <label for="theme-toggle" class="theme-toggle-label">
-          <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
-      </label>
-  </div>
+    <div id="left-buttons" class="no-drag">
+      <button id="new-tab-btn" type="button">
+        <img src="assets/plus.png" alt="New Tab">
+      </button>
+      <div id="new-tab-dropdown" class="dropdown">
+        <button class="new-tab-option" type="button" data-layout="single">
+          <img src="assets/single.png" alt="Single Note Pad"> Single
+        </button>
+        <button class="new-tab-option" type="button" data-layout="four-square">
+          <img src="assets/window.png" alt="Four Square"> Four Square
+        </button>
+      </div>
+  
+      <button id="tabs-dropdown-btn" type="button">
+        <img src="assets/up-arrow.png" alt="Tabs">
+      </button>
+      <div id="tabs-dropdown" class="dropdown">
+        <!-- This will be populated dynamically -->
+        <div class="tab-entry">No tabs yet</div>
+      </div>
+    </div>
+
+    <!-- This is the drag region that fills available space -->
+  <div id="drag-region" class="drag-region"></div>
+
     <!-- <button id="theme-toggle">
         <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
     </button> -->
-    <button id="settings-btn">
-        <img src="assets/settings.png" alt="Settings">
-    </button>
-    <button id="minimize-btn">
-        <img src="assets/minimize.png" alt="Minimize">
-    </button>
-    <button id="close-btn">
-        <img src="assets/close-button.png" alt="Close">
-    </button>
+    <div id="right-buttons" class="no-drag">
+      <div class="theme-toggle-wrapper">
+        <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
+        <label for="theme-toggle" class="theme-toggle-label">
+            <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
+        </label>
+      </div>
+      <button id="settings-btn">
+          <img src="assets/settings.png" alt="Settings">
+      </button>
+      <button id="minimize-btn">
+          <img src="assets/minimize.png" alt="Minimize">
+      </button>
+      <button id="close-btn">
+          <img src="assets/close-button.png" alt="Close">
+      </button>
+    </div>
   </div>
   <!-- "designed by {Author's Name} from Flaticon -->
   <!-- Settings Modal -->
@@ -96,13 +117,6 @@
           </select>
         </div>
         <div class="setting-item">
-          <label for="shadow-color">Status Bar Shadow</label>
-          <div class="color-picker-wrapper">
-            <input type="color" id="shadow-color" value="#eb280a">
-            <span class="color-preview"></span>
-          </div>
-        </div>
-        <div class="setting-item">
           <label for="text-box-theme">Text Box Theme</label>
           <select id="text-box-theme">
             <option value="default">Default</option>
@@ -112,22 +126,6 @@
             <option value="sunset">Sunset</option>
             <option value="blue">Blue</option>
           </select>
-        </div>
-      </div>
-      
-      <div class="settings-column">
-        <h3>API Keys</h3>
-        <div class="setting-item">
-          <label for="telegram-chat-id">Telegram Chat ID</label>
-          <input type="text" id="telegram-chat-id" placeholder="Enter Telegram Chat ID">
-        </div>
-        <div class="setting-item">
-          <label for="openai-api-key">OpenAI API Key</label>
-          <input type="password" id="openai-api-key" placeholder="Enter OpenAI API Key">
-        </div>
-        <div class="setting-item">
-          <label for="perplexity-api-key">Perplexity API Key</label>
-          <input type="password" id="perplexity-api-key" placeholder="Enter Perplexity API Key">
         </div>
       </div>
     </div>

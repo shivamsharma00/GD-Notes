@@ -1,60 +1,50 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const fs = require('fs').promises;
-const os = require('os');
-const path = require('path');
-const { app } = require('electron');
 
+// Flag to prevent multiple initialization
+let hasInitialized = false;
 
 contextBridge.exposeInMainWorld('electronAPI', {
-
+    // Window controls
     closeWindow: () => ipcRenderer.send('close-window'),
     minimizeWindow: () => ipcRenderer.send('minimize-window'),
 
     // File Operations
     readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
     writeFile: (filePath, data) => ipcRenderer.invoke('write-file', filePath, data),
+
+    // Utility functions
+    getHomeDir: () => ipcRenderer.invoke('get-home-dir'),
+    joinPath: (...paths) => {
+        // Convert paths to a simple array of strings before sending
+        const pathsArray = paths.map(p => String(p));
+        return ipcRenderer.invoke('join-path', pathsArray);
+    },
+
+    // File system operations
+    fileExists: (filePath) => ipcRenderer.invoke('file-exists', filePath),
+    directoryExists: (dirPath) => ipcRenderer.invoke('directory-exists', dirPath),
+    createDirectory: (dirPath) => ipcRenderer.invoke('create-directory', dirPath),
     createDataDir: (dirPath) => ipcRenderer.invoke('create-data-dir', dirPath),
-
-    // utility functions
-    getHomeDir: () => os.homedir(),
-    joinPath: (...paths) => path.join(...paths),
-
-    existsSync: (filePath) => fs.existsSync(filePath),
-    mkdirSync: (dirPath, options) => fs.mkdirSync(dirPath, options),
-    writeFileSync: (filePath, data, encoding) => fs.writeFileSync(filePath, data, encoding),
-    
     getAppDataPath: () => ipcRenderer.invoke('get-app-data-path'),
+    
+    // Window management
+    createNewWindow: (options) => {
+        // Ensure options is serializable
+        const serializedOptions = JSON.parse(JSON.stringify(options));
+        return ipcRenderer.invoke('create-new-window', serializedOptions);
+    },
+    deleteTab: (tabId) => ipcRenderer.invoke('delete-tab', tabId),
 
-    createDirectory: async (dirPath) => {
-        try {
-            await fs.mkdir(dirPath, { recursive: true });
-            return true;
-        } catch (error) {
-            console.error('Failed to create directory:', error);
-            return false;
+    // Add this to listen for the init event (with duplicate protection)
+    onInitNewTab: (callback) => {
+        if (!hasInitialized) {
+            ipcRenderer.on('init-new-tab', (event, options) => {
+                hasInitialized = true;
+                callback(event, options);
+            });
         }
     },
 
-    directoryExists: async (dirPath) => {
-        try {
-          await fs.access(dirPath);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-    fileExists: async (filePath) => {
-        try {
-          await fs.access(filePath);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-    // readFile: (filePath) => fs.readFileSync(filePath, 'utf8'),
-    // writeFile: (filePath, data) => fs.writeFileSync(filePath, data, 'utf8'),
-    // ipcRenderer: {
-    //     send: (channel, data) => ipcRenderer.send(channel, data),
-    //     on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
-    // },
+    // Add this to the electronAPI object in preload.js
+    getTabData: (tabId) => ipcRenderer.invoke('get-tab-data', tabId),
 });

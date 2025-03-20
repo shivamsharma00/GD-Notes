@@ -12,6 +12,21 @@ let textBoxThemeSelect, saveSettingsBtn;
 let journalActive = false;
 let moodJournals = [];
 
+let tabs = [];
+
+// Add this function at the top of your file, after the imports
+function logElement(id) {
+    const element = document.getElementById(id);
+    console.log(`Element ${id}:`, element);
+    if (element) {
+        console.log(`- classList:`, element.classList);
+        console.log(`- style.display:`, window.getComputedStyle(element).display);
+        console.log(`- visibility:`, window.getComputedStyle(element).visibility);
+        console.log(`- offsetHeight:`, element.offsetHeight);
+        console.log(`- offsetWidth:`, element.offsetWidth);
+    }
+}
+
 const initialize = () => {
     textBox = [
         document.getElementById('text-box-1'),
@@ -36,7 +51,67 @@ const initialize = () => {
     // return Promise.resolve();
     return textBox;
 };
-
+function createNewTab(layout) {
+    console.log('Creating new tab with layout:', layout);
+    
+    const tabId = 'tab-' + Date.now();
+    
+    // Get current theme mode
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    
+    // Use the first color in the appropriate theme list
+    const themes = {
+        light: ['#ffffff', '#f0f0f0', '#e0e0e0', '#d0d0d0'],
+        dark: ['#1e1e1e', '#2e2e2e', '#3e3e3e', '#4e4e4e'],
+    };
+    
+    const colorList = isDarkMode ? themes.dark : themes.light;
+    
+    // Create a new tab object
+    const newTab = {
+        id: tabId,
+        layout: layout,
+        name: layout === 'single' ? 'Single Note Pad' : 'Four Square Tab',
+        content: '',
+        contents: layout === 'four-square' ? ['', '', '', ''] : undefined,
+        backgroundColor: colorList[0],
+        backgroundColors: layout === 'four-square' ? colorList.slice(0, 4) : undefined,
+        textColor: isDarkMode ? '#ffffff' : '#000000',
+        textColors: layout === 'four-square' ? 
+            (isDarkMode ? ['#ffffff', '#ffffff', '#ffffff', '#ffffff'] : 
+                         ['#000000', '#000000', '#000000', '#000000']) : 
+            undefined,
+        settings: {
+            fontFamily: "'Open Sans', sans-serif",
+            fontSize: '16px',
+            isDarkMode: isDarkMode
+        }
+    };
+    
+    // First save the tab data
+    Storage.saveTab(tabId, newTab)
+        .then(success => {
+            if (success) {
+                // Then create the window with the saved tab data
+                return window.electronAPI.createNewWindow({
+                    tabId: tabId,
+                    layout: layout,
+                    width: layout === 'single' ? 400 : 600,
+                    height: layout === 'single' ? 400 : 600
+                });
+            } else {
+                throw new Error('Failed to save tab data');
+            }
+        })
+        .then(() => {
+            // Add to tabs array after window is created
+            tabs.push(newTab);
+            updateTabsDropdown();
+        })
+        .catch(error => {
+            console.error('Error creating new tab:', error);
+        });
+}
 function setupEventListeners() {
     console.log('setupEventListeners');
 
@@ -116,9 +191,225 @@ function setupEventListeners() {
             settingsModal.classList.add('hidden');
         });
     }
+
+    // Debug logging for dropdown elements
+    console.log("=== DROPDOWN DEBUG ===");
+    logElement('new-tab-btn');
+    logElement('new-tab-dropdown');
+    logElement('tabs-dropdown-btn');
+    logElement('tabs-dropdown');
+    
+    // New Tab Dropdown
+    const newTabBtn = document.getElementById('new-tab-btn');
+    const newTabDropdown = document.getElementById('new-tab-dropdown');
+    if (newTabBtn && newTabDropdown) {
+        // Force initial hidden state for the dropdown
+        newTabDropdown.classList.add('hidden');
+        
+        newTabBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          newTabDropdown.classList.toggle('hidden');
+        });
+        
+        // Use e.currentTarget (or the option element) to reliably read the dataset attribute
+        document.querySelectorAll('.new-tab-option').forEach(option => {
+          option.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const layout = option.dataset.layout; // "single" or "four-square"
+            console.log('Creating new tab with layout:', layout);
+            createNewTab(layout);
+            newTabDropdown.classList.add('hidden');
+          });
+        });
+      }
+      
+      // Create new tab with tab-specific settings and dimensions based on layout
+      
+      
+      // Function to properly create tab elements based on layout
+      
+    // if (newTabBtn && newTabDropdown) {
+    //     console.log("Setting up new tab dropdown event listeners");
+        
+    //     // Force initial state
+    //     newTabDropdown.classList.add('hidden');
+        
+    //     newTabBtn.addEventListener('click', (e) => {
+    //         console.log("New tab button clicked");
+    //         e.stopPropagation();
+    //         e.preventDefault();
+            
+    //         // Toggle dropdown visibility
+    //         const isHidden = newTabDropdown.classList.contains('hidden');
+    //         console.log(`Dropdown is currently ${isHidden ? 'hidden' : 'visible'}`);
+            
+    //         if (isHidden) {
+    //             newTabDropdown.classList.remove('hidden');
+    //             console.log("Removed 'hidden' class");
+    //         } else {
+    //             newTabDropdown.classList.add('hidden');
+    //             console.log("Added 'hidden' class");
+    //         }
+            
+    //         // Log the state after toggle
+    //         console.log("After toggle:", newTabDropdown.classList.contains('hidden') ? 'hidden' : 'visible');
+    //         logElement('new-tab-dropdown');
+            
+    //         // Close tabs dropdown if open
+    //         const tabsDropdown = document.getElementById('tabs-dropdown');
+    //         if (tabsDropdown) {
+    //             tabsDropdown.classList.add('hidden');
+    //         }
+    //     });
+    // } else {
+    //     console.error("Could not find new tab button or dropdown");
+    // }
+
+    // Tabs Dropdown
+    const tabsDropdownBtn = document.getElementById('tabs-dropdown-btn');
+    const tabsDropdown = document.getElementById('tabs-dropdown');
+    if (tabsDropdownBtn && tabsDropdown) {
+        // Initially hide the dropdown
+        tabsDropdown.classList.add('hidden');
+        
+        tabsDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            // Close other dropdown if open
+            if (newTabDropdown) {
+                newTabDropdown.classList.add('hidden');
+            }
+            
+            // Toggle this dropdown
+            tabsDropdown.classList.toggle('hidden');
+            console.log('Tabs dropdown visibility:', !tabsDropdown.classList.contains('hidden'));
+        });
+    }
+
+    // Global click handler to close dropdowns
+    document.addEventListener('click', (e) => {
+        const dropdowns = [newTabDropdown, tabsDropdown];
+        const buttons = [newTabBtn, tabsDropdownBtn];
+        
+        if (!buttons.some(btn => btn && btn.contains(e.target))) {
+            dropdowns.forEach(dropdown => {
+                if (dropdown && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+    });
+
     setupTextBoxEventListeners();
 };
 
+function createTabElement(tab) {
+    const container = document.getElementById('text-box-container');
+    if (!container) {
+        console.error('Text box container not found');
+        return;
+    }
+    
+    // Clear any existing content in the container
+    container.innerHTML = '';
+    
+    // Set the container class based on layout
+    container.className = ''; // Clear existing classes
+    container.id = 'text-box-container';
+    
+    if (tab.layout === 'single') {
+        // Add single layout class to container
+        container.classList.add('single-layout');
+        
+        // Create a single text box
+        const singleBox = document.createElement('div');
+        singleBox.classList.add('text-box', 'single-box');
+        singleBox.id = 'text-box-1'; // Use consistent ID for event binding
+        singleBox.contentEditable = "true";
+        singleBox.spellcheck = true;
+        singleBox.innerHTML = tab.content || '';
+        
+        // Apply styles
+        singleBox.style.width = '100%';
+        singleBox.style.height = '100%';
+        singleBox.style.backgroundColor = tab.backgroundColor || '#ffffff';
+        singleBox.style.color = tab.textColor || '#000000';
+        
+        if (tab.settings) {
+            singleBox.style.fontFamily = tab.settings.fontFamily || 'inherit';
+            singleBox.style.fontSize = tab.settings.fontSize || 'inherit';
+        }
+        
+        // Add event listeners
+        singleBox.addEventListener('input', () => {
+            tab.content = singleBox.innerHTML;
+            Storage.saveTab(tab.id, tab);
+        });
+        
+        container.appendChild(singleBox);
+        textBox = [singleBox]; // Update the textBox array reference
+    } else {
+        // Add four-square layout class to container
+        container.classList.add('four-square-layout');
+        
+        // Create four text boxes for the four-square layout
+        for (let i = 0; i < 4; i++) {
+            const boxDiv = document.createElement('div');
+            boxDiv.classList.add('text-box');
+            boxDiv.id = `text-box-${i+1}`;
+            boxDiv.contentEditable = "true";
+            boxDiv.spellcheck = true;
+            
+            // Load existing content if available
+            if (tab.contents && tab.contents[i]) {
+                boxDiv.innerHTML = tab.contents[i];
+            }
+            
+            // Apply styles
+            if (tab.backgroundColors && tab.backgroundColors[i]) {
+                boxDiv.style.backgroundColor = tab.backgroundColors[i];
+                boxDiv.style.color = tab.textColors && tab.textColors[i] ? 
+                    tab.textColors[i] : '#000000';
+            } else {
+                // Default colors if not specified
+                const defaultColors = tab.settings?.isDarkMode ? 
+                    ['#1e1e1e', '#2e2e2e', '#3e3e3e', '#4e4e4e'] : 
+                    ['#ffffff', '#f0f0f0', '#e0e0e0', '#d0d0d0'];
+                
+                boxDiv.style.backgroundColor = defaultColors[i];
+                boxDiv.style.color = tab.settings?.isDarkMode ? '#ffffff' : '#000000';
+            }
+            
+            if (tab.settings) {
+                boxDiv.style.fontFamily = tab.settings.fontFamily || 'inherit';
+                boxDiv.style.fontSize = tab.settings.fontSize || 'inherit';
+            }
+            
+            // Add event listeners
+            boxDiv.addEventListener('input', () => {
+                // Initialize contents array if it doesn't exist
+                if (!tab.contents) tab.contents = ['', '', '', ''];
+                tab.contents[i] = boxDiv.innerHTML;
+                Storage.saveTab(tab.id, tab);
+            });
+            
+            container.appendChild(boxDiv);
+        }
+        
+        // Update the textBox array reference
+        textBox = [
+            document.getElementById('text-box-1'),
+            document.getElementById('text-box-2'),
+            document.getElementById('text-box-3'),
+            document.getElementById('text-box-4'),
+        ];
+    }
+    
+    // Setup event listeners for all text boxes
+    setupTextBoxEventListeners();
+}
 async function saveSettings() {
     const settings = await Storage.loadSettings() || {};
     
@@ -126,14 +417,6 @@ async function saveSettings() {
     settings.fontSize = fontSizeSelect.value;
     settings.isDarkMode = themeToggle.checked;
     settings.textBoxTheme = textBoxThemeSelect.value;
-    settings.statusShadowColor = shadowColorPicker.value;
-    
-    // Save API keys if needed
-    settings.apiKeys = {
-        telegramChatId: document.getElementById('telegram-chat-id').value,
-        openAIAPIKey: document.getElementById('openai-api-key').value,
-        perplexityAPIKey: document.getElementById('perplexity-api-key').value,
-    };
     
     await Storage.saveSettings(settings);
     applySettings(settings);
@@ -537,11 +820,6 @@ function applySettings(settings) {
         applyTextBoxTheme(textBoxTheme);
     }
 
-    // Apply Status Shadow Color
-    const statusShadowColor = settings.statusShadowColor || '#eb280a';
-    shadowColorPicker.value = statusShadowColor;
-    document.body.style.setProperty('--status-shadow-color', statusShadowColor);
-
     // Apply Dark Mode
     const isDarkMode = settings.isDarkMode || false;
     themeToggle.checked = isDarkMode;
@@ -620,6 +898,86 @@ const debouncedSave = debounce(async (index, content) => {
     await Storage.saveContent(index, content);
 }, 1000);
 
+async function initTabs() {
+    console.log("Here")
+    tabs = await Storage.loadTabs();
+    tabs.forEach(tab => {
+        createTabElement(tab);
+    });
+    updateTabsDropdown();
+}
+
+// Function to update tabs dropdown
+function updateTabsDropdown() {
+    const dropdown = document.getElementById('tabs-dropdown');
+    dropdown.innerHTML = ''; // Clear previous entries
+    
+    if (tabs.length === 0) {
+        const entry = document.createElement('div');
+        entry.classList.add('tab-entry');
+        entry.textContent = 'No tabs yet';
+        dropdown.appendChild(entry);
+        return;
+    }
+    
+    tabs.forEach(tab => {
+        const entry = document.createElement('div');
+        entry.classList.add('tab-entry');
+        entry.textContent = tab.name || `Tab ${tab.id.substring(4, 8)}`;
+        
+        // Create a delete icon/button for this tab
+        const deleteBtn = document.createElement('button');
+        deleteBtn.classList.add('delete-tab-btn');
+        deleteBtn.innerHTML = '<img src="assets/delete.png" alt="Delete Tab">';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeTab(tab.id);
+        });
+        
+        // Only add delete button if we have more than one tab
+        if (tabs.length > 1) {
+            entry.appendChild(deleteBtn);
+        }
+        
+        // Clicking the entry brings the tab into focus
+        entry.addEventListener('click', () => {
+            focusTab(tab.id);
+        });
+        
+        dropdown.appendChild(entry);
+    });
+}
+
+// Remove a tab from the UI and from the tabs array.
+function removeTab(tabId) {
+    // First check if we have more than one tab
+    if (tabs.length <= 1) {
+        console.log("Cannot delete the last tab");
+        return;
+    }
+    
+    // Remove from tabs array
+    tabs = tabs.filter(t => t.id !== tabId);
+    
+    // Update the tabs dropdown
+    updateTabsDropdown();
+    
+    // Save tabs to storage
+    Storage.saveTabs(tabs);
+    
+    // Tell the main process to close the window for this tab
+    window.electronAPI.deleteTab(tabId);
+}
+
+// Bring a tab into view/focus.
+function focusTab(tabId) {
+    const tabElem = document.getElementById(tabId);
+    if (tabElem) {
+      tabElem.scrollIntoView({ behavior: 'smooth' });
+      tabElem.focus();
+    }
+}
+
 export default {
     initialize,
     get textBox() { return textBox; },
@@ -627,4 +985,9 @@ export default {
     applyDarkMode,
     applySettings,
     applyTextBoxTheme,
+    initTabs,
+    createTabElement,
+    removeTab,
+    createNewTab,
+    updateTabsDropdown,
 };

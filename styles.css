@@ -1,6 +1,6 @@
 /* Variables */
 :root {
-  --background-color: #ffffff00;
+  --background-color: #ffffff;
   --settings-background-color: #ffffff;
   --text-color: #000000;
   --title-bar-color: #f0f0f0;
@@ -10,11 +10,9 @@
   --toggle-bg-dark: #2196F3; 
   --font-family: 'Helvetica Neue', sans-serif;
   --status-label-color: #000000;
-  --status-shadow-color: #eb280a;
 
   --modal-background-color: #ffffff;
   --modal-text-color: #000000;
-  /* --input-background-color: #f6f8fa; */
   --input-background-color: #ffffff;
   --input-text-color: #000000;
   --input-border-color: #d0d7de;
@@ -26,7 +24,7 @@
 
 /* Dark Mode Variables */
 body.dark-mode {
-  --background-color: #ffffff00;
+  --background-color: #121212;
   --text-color: #FFFFFF;
   --title-bar-color: #090f18;
   --text-box-bg: #080d14;
@@ -67,7 +65,7 @@ body {
   #text-box-container {
     /* flex:grid; */
     position: relative;
-    z-index: 2;
+    z-index: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
@@ -99,6 +97,8 @@ body {
     max-height: 100%;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    position: relative;
+    z-index: 2;
   }
 
   .text-box::-webkit-scrollbar {
@@ -142,21 +142,13 @@ body {
     border-top: 1px solid #ccc;
     padding: 0px -2px;
     position: relative;
-    z-index: 1;
+    z-index: 5000;
     -webkit-app-region: drag;
     border-radius: 0 0 10px 10px;
-    /* height:30px; */
   }
 
   #status-bar::before {
-    content: '';
-    position: absolute;
-    top: 0px; /* Adjust as needed */
-    left: 0;
-    right: 0;
-    height: 150px; /* Adjust as needed */
-    box-shadow: 0 -10px 10px var(--status-shadow-color);
-    z-index: -1;
+    display: none;
   }
   
   #status-label {
@@ -395,7 +387,7 @@ body {
   }
 }
 
-#theme-toggle img, #settings-btn img, #minimize-btn img, #close-btn img {
+#theme-toggle img, #settings-btn img, #tabs-dropdown-btn img, #new-tab-btn img, #minimize-btn img, #close-btn img {
     width: 15px;
     height: 15px;
     border:none;
@@ -422,6 +414,8 @@ body {
   /* Light Mode Icons */
 body:not(.dark-mode) #theme-toggle img,
 body:not(.dark-mode) #settings-btn img,
+body:not(.dark-mode) #new-tab-btn img,
+body:not(.dark-mode) #tabs-dropdown-btn img,
 body:not(.dark-mode) #minimize-btn img,
 body:not(.dark-mode) #close-btn img {
   filter: invert(0)
@@ -430,6 +424,8 @@ body:not(.dark-mode) #close-btn img {
 /* Dark Mode Icons */
 body.dark-mode #theme-toggle img,
 body.dark-mode #settings-btn img,
+body.dark-mode #new-tab-btn img,
+body.dark-mode #tabs-dropdown-btn img,
 body.dark-mode #minimize-btn img,
 body.dark-mode #close-btn img {
   filter: invert(1);
@@ -438,6 +434,8 @@ body.dark-mode #close-btn img {
   /* Hover Effects for buttons */
 #theme-toggle:hover img,
 #settings-btn:hover img,
+#new-tab-btn:hover img,
+#tabs-dropdown-btn:hover img,
 #minimize-btn:hover img {
   filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(118%) contrast(119%) !important;
 }
@@ -494,3 +492,173 @@ body:not(.dark-mode) .theme-toggle-label img {
 body.dark-mode .theme-toggle-label img {
     filter: invert(1);
 }
+
+/* Fix dropdown positioning to start from top of status bar */
+#new-tab-dropdown,
+#tabs-dropdown {
+    position: absolute;
+    top: -70px; /* Position from top of status bar */
+    left: 0;
+    background-color: var(--dropdown-bg);
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10001 !important;
+    min-width: 120px;
+    padding: 4px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+/* Ensure the hidden class works properly */
+.dropdown.hidden {
+    display: none !important;
+}
+
+/* Consistent styling for dropdown entries */
+.new-tab-option,
+.tab-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin: 2px 0;
+    text-align: left;
+    color: var(--dropdown-text);
+    font-size: 11px;
+    background-color: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    z-index: 10000 !important;
+}
+
+.new-tab-option:hover,
+.tab-entry:hover {
+    background-color: rgba(128, 128, 128, 0.1);
+}
+
+/* Add icons to new tab options */
+.new-tab-option img,
+.tab-entry img {
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+}
+
+/* Make button icons smaller */
+#theme-toggle img, 
+#settings-btn img, 
+#tabs-dropdown-btn img, 
+#new-tab-btn img, 
+#minimize-btn img, 
+#close-btn img {
+    width: 12px;
+    height: 12px;
+}
+
+/* Uniform spacing for all buttons */
+#left-buttons,
+#right-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+}
+
+button {
+    margin: 0;
+    padding: 0;
+}
+
+/* Ensure dark mode works for dropdowns */
+body.dark-mode #new-tab-dropdown,
+body.dark-mode #tabs-dropdown {
+    background-color: var(--dropdown-bg);
+    border-color: var(--input-border-color);
+}
+
+body.dark-mode .new-tab-option,
+body.dark-mode .tab-entry {
+    color: var(--dropdown-text);
+}
+
+body.dark-mode .new-tab-option:hover,
+body.dark-mode .tab-entry:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* New Tab Layouts */
+.text-box.tab-small {
+  width: 200px;
+  height: 150px;
+}
+.text-box.tab-vertical {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  height: 300px;
+  gap: 4px;
+}
+.text-box.tab-large {
+  width: 400px;
+  height: 300px;
+}
+
+/* Styles for tabs dropdown entries */
+.tab-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  cursor: pointer;
+}
+.tab-entry:hover {
+  background-color: var(--dropdown-bg);
+}
+.delete-tab-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.delete-tab-btn img {
+  width: 10px;
+  height: 10px;
+}
+
+/* Ensure dropdowns have the highest z-index */
+/* #left-buttons, 
+#new-tab-btn, 
+#tabs-dropdown-btn,
+#new-tab-dropdown,
+#tabs-dropdown {
+  position: relative;
+  z-index: 10000 !important; /* Force highest z-index */
+/* } */
+
+/* Make dropdown options have the same high z-index */
+/* .new-tab-option {
+  position: relative;
+  z-index: 10000 !important;
+} */
+
+/* Add this for single layout */
+.text-box.single-box {
+  flex: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Update the text-box-container to handle different layouts */
+#text-box-container.single-layout {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#text-box-container.four-square-layout {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  grid-template-rows: 1fr 1fr !important;
+  gap: 1px !important;
+} 

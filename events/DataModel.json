@@ -1,0 +1,119 @@
+{
+	"appVersion": "1.0.0",
+	"globalSettings": {
+		"theme": "light", 
+		"defaultFontFamily": "'Open Sans', sans-serif",
+		"defaultFontSize": "16px",
+		"lastOpened": "2025-03-20T12:00:00Z"
+	},
+	"tabs": [
+		{
+		"id": "tab-1680012345678",
+		"layout": "single",
+		"name": "Single Note Pad",
+		"window": {
+			"x": 100,
+			"y": 100,
+			"width": 400,
+			"height": 400,
+			"isMaximized": false
+		},
+		"notes": [
+			{
+			"id": "note-1",
+			"content": "This is the content of the note.",
+			"metadata": {
+				"created": "2025-03-20T12:00:00Z",
+				"lastModified": "2025-03-20T12:30:00Z"
+				}
+			}
+		],
+		"appearance": {
+			"backgroundColor": "#ffffff",
+			"textColor": "#000000",
+			"fontFamily": "'Open Sans', sans-serif",
+			"fontSize": "16px",
+			"isDarkMode": false
+		},
+		"metadata": {
+			"created": "2025-03-20T12:00:00Z",
+			"modified": "2025-03-20T12:30:00Z"
+		}
+		},
+		{
+		"id": "tab-1680012347890",
+		"layout": "four-square",
+		"name": "Four Square Tab",
+		"window": {
+			"x": 550,
+			"y": 150,
+			"width": 600,
+			"height": 600,
+			"isMaximized": false
+		},
+		"notes": [
+			{
+			"id": "note-1",
+			"content": "",
+			"metadata": {
+				"created": "2025-03-20T12:10:00Z",
+				"lastModified": "2025-03-20T12:10:00Z"
+			}
+			},
+			{
+			"id": "note-2",
+			"content": "",
+			"metadata": {
+				"created": "2025-03-20T12:10:00Z",
+				"lastModified": "2025-03-20T12:10:00Z"
+			}
+			},
+			{
+			"id": "note-3",
+			"content": "",
+			"metadata": {
+				"created": "2025-03-20T12:10:00Z",
+				"lastModified": "2025-03-20T12:10:00Z"
+			}
+			},
+			{
+			"id": "note-4",
+			"content": "",
+			"metadata": {
+				"created": "2025-03-20T12:10:00Z",
+				"lastModified": "2025-03-20T12:10:00Z"
+			}
+			}
+		],
+		"appearance": {
+			"backgroundColors": [
+			"#ffffff",
+			"#f0f0f0",
+			"#e0e0e0",
+			"#d0d0d0"
+			],
+			"textColors": [
+			"#000000",
+			"#000000",
+			"#000000",
+			"#000000"
+			],
+			"fontFamily": "'Open Sans', sans-serif",
+			"fontSize": "16px",
+			"isDarkMode": false
+		},
+		"metadata": {
+			"created": "2025-03-20T12:10:00Z",
+			"modified": "2025-03-20T12:15:00Z"
+		}
+		}
+	],
+	"journals": [
+		{
+		"id": "journal-1680012400000",
+		"timestamp": "2025-03-20T12:45:00Z",
+		"entry": "Today I felt productive while updating my sticky notes app.",
+		"mood": "happy"
+		}
+	]
+	}  
