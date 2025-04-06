@@ -115,34 +115,75 @@ function applyColorTheme(themeName, level = 1, isDark = false) {
         themeName = 'default';
     }
     
-    // Use the appropriate theme array based on dark mode
-    const colors = isDark ? COLOR_THEMES[themeName].dark : COLOR_THEMES[themeName].light;
+    // Special handling for four-square rainbow mode (level = -1)
+    const isRainbowMode = level === -1 && textBoxElements.length === 4;
     
-    // Get the color at the specified level (or default to level 1)
-    const colorIndex = Math.min(Math.max(0, level), 3); // Clamp between 0-3
-    const bgColor = colors[colorIndex];
-    
-    // Calculate text color based on background brightness
-    // Simple approach: dark text on light backgrounds, light text on dark backgrounds
-    const isLightBg = isDark ? false : true;
-    const textColor = isLightBg ? '#000000' : '#ffffff';
-    
-    // Apply to document variables
-    document.documentElement.style.setProperty('--text-box-bg', bgColor);
-    document.documentElement.style.setProperty('--text-box-color', textColor);
-    
-    // Apply to each text box directly
-    textBoxElements.forEach(box => {
-        box.style.backgroundColor = bgColor;
-        box.style.color = textColor;
-    });
+    if (isRainbowMode) {
+        // Apply different intensities to each text box in four-square layout
+        for (let i = 0; i < 4; i++) {
+            const box = textBoxElements[i];
+            if (!box) continue;
+            
+            // Use the appropriate theme array based on dark mode
+            const colors = isDark ? COLOR_THEMES[themeName].dark : COLOR_THEMES[themeName].light;
+            
+            // Apply a different intensity level to each box (0, 1, 2, 3)
+            const colorIndex = i % colors.length;
+            const bgColor = colors[colorIndex];
+            
+            // Calculate text color based on background brightness
+            const isLightBg = isDark ? false : true;
+            const textColor = isLightBg ? '#000000' : '#ffffff';
+            
+            // Apply to individual box
+            box.style.backgroundColor = bgColor;
+            box.style.color = textColor;
+            
+            // Store colors in the box dataset for reference
+            box.dataset.backgroundColor = bgColor;
+            box.dataset.textColor = textColor;
+        }
+        
+        // For consistency, still set the CSS variables to the first intensity level
+        document.documentElement.style.setProperty('--text-box-bg', isDark ? 
+            COLOR_THEMES[themeName].dark[0] : COLOR_THEMES[themeName].light[0]);
+        document.documentElement.style.setProperty('--text-box-color', isDark ? '#ffffff' : '#000000');
+    } else {
+        // Regular theme application (all boxes same color)
+        // Use the appropriate theme array based on dark mode
+        const colors = isDark ? COLOR_THEMES[themeName].dark : COLOR_THEMES[themeName].light;
+        
+        // Get the color at the specified level (or default to level 1)
+        const colorIndex = Math.min(Math.max(0, level), 3); // Clamp between 0-3
+        const bgColor = colors[colorIndex];
+        
+        // Calculate text color based on background brightness
+        // Simple approach: dark text on light backgrounds, light text on dark backgrounds
+        const isLightBg = isDark ? false : true;
+        const textColor = isLightBg ? '#000000' : '#ffffff';
+        
+        // Apply to document variables
+        document.documentElement.style.setProperty('--text-box-bg', bgColor);
+        document.documentElement.style.setProperty('--text-box-color', textColor);
+        
+        // Apply to each text box directly
+        textBoxElements.forEach(box => {
+            box.style.backgroundColor = bgColor;
+            box.style.color = textColor;
+        });
+    }
     
     // Update current tab data
     if (currentTabInstanceData && currentTabInstanceData.appearance) {
-        currentTabInstanceData.appearance.backgroundColor = bgColor;
-        currentTabInstanceData.appearance.textColor = textColor;
+        // For rainbow mode, we still just store the theme and level
         currentTabInstanceData.appearance.colorTheme = themeName;
         currentTabInstanceData.appearance.colorLevel = level;
+        
+        // If it's not rainbow mode, also update the background and text colors
+        if (!isRainbowMode) {
+            currentTabInstanceData.appearance.backgroundColor = document.documentElement.style.getPropertyValue('--text-box-bg');
+            currentTabInstanceData.appearance.textColor = document.documentElement.style.getPropertyValue('--text-box-color');
+        }
         
         // Save to storage
         saveCurrentTabContent(false);
@@ -154,7 +195,8 @@ function applyColorTheme(themeName, level = 1, isDark = false) {
     }
     
     if (colorIntensityButton) {
-        colorIntensityButton.querySelector('.settings-option-value').textContent = `Level ${level + 1}`;
+        colorIntensityButton.querySelector('.settings-option-value').textContent = level === -1 ? 
+            "Rainbow" : `Level ${level + 1}`;
     }
     
     // Update active state of intensity buttons
@@ -334,6 +376,9 @@ function createTabElement(tabData) {
 
     const layout = tabData.layout || 'single'; // Default to single
     container.className = `${layout}-layout`; // Apply layout class to container
+    
+    // Add a body class for four-square mode to control rainbow button visibility
+    document.body.classList.toggle('four-square-mode', layout === 'four-square');
 
     const numBoxes = (layout === 'four-square') ? 4 : 1;
 
@@ -352,8 +397,8 @@ function createTabElement(tabData) {
          const appearance = tabData.appearance || {};
          box.style.fontFamily = appearance.fontFamily || 'var(--font-family)'; // Fallback to CSS var
          box.style.fontSize = appearance.fontSize || 'var(--font-size)';       // Fallback to CSS var
-         box.style.backgroundColor = appearance.backgroundColor || 'var(--text-box-bg)'; // Fallback
-         box.style.color = appearance.textColor || 'var(--text-box-color)';             // Fallback
+         
+         // Colors will be applied by applyTabAppearance or applyColorTheme later
 
         // Add input event listener for saving content
         box.addEventListener('input', () => {
@@ -376,38 +421,90 @@ function createTabElement(tabData) {
             debouncedSave();
         });
 
+        // Add blur event to save immediately when focus is lost
+        box.addEventListener('blur', () => {
+            // Save without debouncing when focus is lost
+            saveCurrentTabContent(true);
+        });
+
         container.appendChild(box);
         textBoxElements.push(box); // Add reference to the array
     }
 
     console.log(`UI: Created ${textBoxElements.length} text box elements.`);
+    
+    // Ensure we have an immediate save to verify the tab structure is saved
+    saveCurrentTabContent(true);
+    
+    // Reset autosave timer when we create new elements
+    setupAutoSave();
 }
 
 // --- Saving ---
 
 // Function to save the current tab's data
-function saveCurrentTabContent() {
-     if (!currentTabInstanceData) {
-          // console.warn("Save skipped: No current tab data.");
-          return;
-     }
-     // console.log(`UI: Saving content for tab ${currentTabInstanceData.id}`);
-     window.electronAPI.addOrUpdateTab(currentTabInstanceData)
-         .then(() => { /* console.log("Tab content saved."); */ }) // Optional success log
-         .catch(err => console.error(`UI: Error saving tab content for ${currentTabInstanceData.id}:`, err));
+function saveCurrentTabContent(forceUpdate = true) {
+    if (!currentTabInstanceData) {
+        console.warn("Save skipped: No current tab data.");
+        return;
+    }
+    console.log(`UI: Saving content for tab ${currentTabInstanceData.id}`);
+    window.electronAPI.addOrUpdateTab(currentTabInstanceData)
+        .then(() => console.log("Tab content saved successfully."))
+        .catch(err => console.error(`UI: Error saving tab content for ${currentTabInstanceData.id}:`, err));
+    
+    // If we're forcing update (like when a setting changes), update lastModified time
+    if (forceUpdate && currentTabInstanceData.metadata) {
+        currentTabInstanceData.metadata.modified = new Date().toISOString();
+    }
 }
 
-// Debounce function
-function debounce(func, wait) {
+// Debounce function with immediate option
+function debounce(func, wait, immediate = false) {
     let timeout;
     return function(...args) {
+        const later = () => {
+            timeout = null;
+            if (!immediate) func.apply(this, args);
+        };
+        const callNow = immediate && !timeout;
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = setTimeout(later, wait);
+        if (callNow) func.apply(this, args);
     };
 }
 
-// Create a debounced version of the save function
-const debouncedSave = debounce(saveCurrentTabContent, 1000); // Save after 1 second of inactivity
+// Create a debounced version of the save function - runs 500ms after typing stops
+const debouncedSave = debounce(saveCurrentTabContent, 500);
+
+// Also set up an auto-save timer to save periodically regardless of changes
+let autoSaveInterval = null;
+function setupAutoSave() {
+    // Clear any existing interval
+    if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+    }
+    
+    // Save every 10 seconds regardless of changes
+    autoSaveInterval = setInterval(() => {
+        if (currentTabInstanceData && currentTabInstanceData.notes && 
+            currentTabInstanceData.notes.some(note => note?.content?.trim())) {
+            saveCurrentTabContent(false); // Don't force update lastModified time for auto-saves
+        }
+    }, 10000); // 10 seconds
+}
+
+// Start auto-save when tab is created
+function startAutoSave() {
+    setupAutoSave();
+    
+    // Also set up a save before window unload
+    window.addEventListener('beforeunload', () => {
+        if (currentTabInstanceData) {
+            saveCurrentTabContent(true);
+        }
+    });
+}
 
 // --- Event Listeners Setup ---
 function setupEventListeners() {
@@ -475,13 +572,20 @@ function setupEventListeners() {
     function positionSubmenu(parentOption, submenu) {
         if (!parentOption || !submenu) return;
         
-        const parentRect = parentOption.getBoundingClientRect();
+        // Get the parent dropdown element (settings dropdown)
+        const parentDropdown = parentOption.closest('.dropdown');
+        if (!parentDropdown) return;
         
-        // Position to the left of the parent
-        submenu.style.left = '-180px'; // Distance from parent
+        const parentRect = parentDropdown.getBoundingClientRect();
         
-        // Vertical position - align with the parent
-        submenu.style.top = '0';
+        // Position to the left of the parent dropdown
+        // Move it just to the left of the settings dropdown with minimal spacing
+        submenu.style.left = `-${submenu.offsetWidth + 5}px`; // 5px spacing
+        
+        // Vertical alignment - align with the parent option
+        const optionRect = parentOption.getBoundingClientRect();
+        const topOffset = optionRect.top - parentRect.top;
+        submenu.style.top = `${topOffset}px`;
         
         // Ensure submenu is visible within window
         const submenuRect = submenu.getBoundingClientRect();
@@ -490,7 +594,7 @@ function setupEventListeners() {
         // If submenu would go below window bottom, adjust position
         if (submenuRect.bottom > windowHeight) {
             const adjustment = submenuRect.bottom - windowHeight + 10; // 10px buffer
-            submenu.style.top = `-${adjustment}px`;
+            submenu.style.top = `${parseInt(submenu.style.top) - adjustment}px`;
         }
         
         // For horizontal position, ensure it doesn't go off-screen left
@@ -628,7 +732,7 @@ function setupEventListeners() {
         button.addEventListener('click', (e) => {
             e.stopPropagation();
             const level = parseInt(button.dataset.level);
-            console.log(`UI: Setting color intensity level to: ${level + 1}`);
+            console.log(`UI: Setting color intensity level to: ${level === -1 ? 'Rainbow' : level + 1}`);
             
             // Get current theme or default to 'default'
             const currentTheme = currentTabInstanceData?.appearance?.colorTheme || 'default';
@@ -746,5 +850,6 @@ export default {
     initTabs,
     createTabElement,
     setupEventListeners,
-    setupStatusBarHover
+    setupStatusBarHover,
+    startAutoSave
 };

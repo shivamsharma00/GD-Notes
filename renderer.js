@@ -25,7 +25,13 @@ window.onload = async () => {
 
         // Setup listeners for buttons, dropdowns etc. AFTER elements are initialized
         UI.setupEventListeners();
-         UI.setupStatusBarHover(); // Setup hover effect for status bar
+        UI.setupStatusBarHover(); // Setup hover effect for status bar
+        
+        // Start auto-save functionality
+        if (typeof UI.startAutoSave === 'function') {
+            UI.startAutoSave();
+            console.log('Renderer: Auto-save mechanism started');
+        }
 
         console.log('Renderer: Static UI initialized and listeners attached. Waiting for init-new-tab...');
 

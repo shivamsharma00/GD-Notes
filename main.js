@@ -87,26 +87,37 @@ async function createWindowForTab(tabData) {
     win.on('closed', async () => {
         console.log("Window closed for tab:", tabData.id);
         windowRegistry.delete(tabData.id); // Unregister window
-        const currentTabData = await UnifiedStorage.getTabDataById(tabData.id); // Need this function
-        if (currentTabData) {
-             // Save final bounds and mark as closed
-            const bounds = win.getBounds(); // Get bounds one last time
-            await UnifiedStorage.addOrUpdateTab({
-                ...currentTabData,
-                window: {
-                     ...currentTabData.window, // Keep existing window config
-                     x: bounds.x,             // Update final position/size
-                     y: bounds.y,
-                     width: bounds.width,
-                     height: bounds.height,
-                     isMaximized: win.isMaximized(),
-                     state: 'closed'          // Mark as closed
-                     }
-            });
-            console.log(`Marked tab ${tabData.id} as closed.`);
+        
+        try {
+            // Important: Get the bounds BEFORE the closed event
+            // Use a local variable that won't be affected by window destruction
+            const finalBounds = { 
+                x: win.getBounds().x,
+                y: win.getBounds().y,
+                width: win.getBounds().width,
+                height: win.getBounds().height,
+                isMaximized: win.isMaximized(),
+                state: 'closed'
+            };
+            
+            const currentTabData = await UnifiedStorage.getTabDataById(tabData.id);
+            if (currentTabData) {
+                // Save final bounds and mark as closed
+                await UnifiedStorage.addOrUpdateTab({
+                    ...currentTabData,
+                    window: {
+                        ...currentTabData.window, // Keep existing window config
+                        ...finalBounds          // Update with final position/size
+                    }
+                });
+                console.log(`Marked tab ${tabData.id} as closed.`);
+            }
+        } catch (err) {
+            console.error(`Error saving window state for tab ${tabData.id}:`, err);
         }
-         // Check if it's the last window and we are not quitting (macOS behavior)
-         if (windowRegistry.size === 0 && process.platform === 'darwin' && !app.isQuitting) {
+        
+        // Check if it's the last window and we are not quitting (macOS behavior)
+        if (windowRegistry.size === 0 && process.platform === 'darwin' && !app.isQuitting) {
             // Optionally, decide what to do - maybe nothing, let user use dock menu
             console.log("Last window closed on macOS, app still running.");
         }
@@ -266,7 +277,9 @@ ipcMain.handle('create-new-tab-window', async (event, options) => {
             fontSize: defaultSettings.defaultFontSize || "16px",
             isDarkMode: defaultSettings.theme === 'dark' || false,
             colorTheme: colorTheme || defaultSettings.defaultColorTheme || "default",
-            colorLevel: colorLevel !== undefined ? colorLevel : (defaultSettings.defaultColorLevel || 1)
+            // For four-square, default to rainbow mode (level -1) unless explicitly specified
+            colorLevel: layout === 'four-square' && colorLevel === undefined ? -1 : 
+                        (colorLevel !== undefined ? colorLevel : (defaultSettings.defaultColorLevel || 1))
         },
         notes: layout === 'four-square'
             ? ["", "", "", ""].map((content, i) => ({

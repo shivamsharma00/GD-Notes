@@ -11,6 +11,7 @@
   --font-size: 16px; /* Default */
   --status-label-color: #000000;
   --border-radius: 8px; /* Common border radius value */
+  --hover-blue: #3498db; /* Sky blue for button hover */
 
   --dropdown-bg: #ffffff;
   --dropdown-text: #000000;
@@ -42,7 +43,7 @@ body {
     overflow: hidden;
     font-family: var(--font-family);
     font-size: var(--font-size);
-    background-color: var(--background-color);
+    background-color: transparent; /* Make body transparent */
     color: var(--text-color);
     height: 100vh;
     display: flex;
@@ -63,18 +64,19 @@ body {
     padding: 1px; /* Optional spacing */
     margin-bottom: 1px; /* Space before status bar */
     border-radius: var(--border-radius) var(--border-radius) 0 0; /* Curved top edges */
+    background-color: transparent; /* Make container transparent */
   }
 
   /* Styling for individual editable boxes */
   .text-box {
-    border: 0px solid #ccc; /* Optional border */
+    border: 0px solid transparent; /* Transparent border */
     padding: 10px;
     background-color: var(--text-box-bg);
     color: var(--text-box-color);
     font-size: var(--font-size); /* Use variable */
     font-family: var(--font-family); /* Use variable */
     border-radius: var(--border-radius) var(--border-radius) 0 0; /* Match container */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Optional shadow */
+    box-shadow: none; /* Remove shadow */
     resize: none;
     box-sizing: border-box;
     overflow-y: auto; /* Enable scrolling */
@@ -124,7 +126,7 @@ body {
     left: 0;
     right: 0;
     z-index: 5000; /* High z-index */
-    -webkit-app-region: drag; /* Make bar draggable */
+    -webkit-app-region: no-drag; /* Default to no-drag */
     border-radius: 0 0 var(--border-radius) var(--border-radius); /* Rounded bottom corners */
     transition: transform 0.3s ease-in-out; /* Smooth slide animation */
     transform: translateY(24px); /* Start hidden by default */
@@ -153,14 +155,27 @@ body {
     transform: translateY(0);
   }
 
+  /* Explicitly set drag-region for the middle area only */
   .drag-region {
-    -webkit-app-region: drag;
+    -webkit-app-region: drag; /* Only this element is draggable */
     flex-grow: 1;
     height: 100%;
   }
 
-  .no-drag {
-     -webkit-app-region: no-drag; /* Ensure buttons are clickable */
+  /* Ensure all buttons and interactive elements are not draggable */
+  .no-drag,
+  button,
+  .theme-toggle-wrapper,
+  .dropdown,
+  .subdropdown,
+  .color-level-btn,
+  .font-option,
+  .font-size-option,
+  .color-theme-option,
+  .settings-option,
+  .new-tab-option,
+  .tab-entry {
+    -webkit-app-region: no-drag !important; /* Force no-drag on all interactive elements */
   }
 
   #left-buttons,
@@ -169,6 +184,7 @@ body {
     align-items: center;
     gap: 10px; /* Spacing between buttons */
     padding: 0 5px; /* Padding within button groups */
+    -webkit-app-region: no-drag !important; /* Ensure these are not draggable */
   }
 
   /* General Button Styling */
@@ -194,17 +210,21 @@ body {
 
   /* Specific Button Hover Effects (using filter) */
   #new-tab-btn:hover img,
-  #tabs-dropdown-btn:hover img,
   #settings-btn:hover img,
   .theme-toggle-label:hover img,
   #minimize-btn:hover img {
-      /* Example: slightly lighter/different color on hover */
-      filter: var(--icon-filter) brightness(1.5);
-      /* Or use the specific color filter from old CSS if preferred */
-      /* filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(118%) contrast(119%) !important; */
+      /* Sky blue hover for most buttons */
+      filter: brightness(0) saturate(100%) invert(55%) sepia(83%) saturate(1622%) hue-rotate(175deg) brightness(98%) contrast(89%);
   }
+  
+  /* Keep original style for tabs dropdown */
+  #tabs-dropdown-btn:hover img {
+      filter: var(--icon-filter) brightness(1.5);
+  }
+  
+  /* Red hover for close button */
   #close-btn:hover img {
-       /* Example: Reddish hover */
+       /* Reddish hover */
       filter: brightness(0) saturate(100%) invert(25%) sepia(80%) saturate(5000%) hue-rotate(350deg) brightness(90%) contrast(110%);
   }
 
@@ -274,33 +294,37 @@ body {
       cursor: pointer;
       width: 100%; /* Make items fill width */
       white-space: nowrap; /* Prevent wrapping */
-      font-size: 14px; /* Consistent font size */
+      font-size: 13px; /* Match the tab-name text size */
+      font-weight: normal; /* No bold text */
   }
 
   /* Improved Settings Options Styling */
   .settings-option {
       position: relative;
-      font-size: 14px; /* Match the other dropdowns */
+      font-size: 13px; /* Match the tab-name size */
+      display: flex;
+      flex-direction: column;
   }
 
   .settings-option-label {
       display: block;
-      font-weight: bold;
-      font-size: 14px;
+      font-weight: normal; /* Not bold */
+      font-size: 13px;
       margin-bottom: 2px;
   }
 
   .settings-option-value {
       display: block;
-      font-size: 12px;
+      font-size: 13px; /* Same as label */
       opacity: 0.7;
+      font-weight: normal;
   }
 
   /* Ensure subdropdown items match tab dropdown text */
   .font-option,
   .font-size-option,
   .color-theme-option {
-      font-size: 14px; /* Match tab entries for consistency */
+      font-size: 13px; /* Match tab entries for consistency */
   }
 
   .new-tab-option img {
@@ -328,6 +352,7 @@ body {
       margin-right: 8px; /* Space before delete button */
       overflow: hidden;
       text-overflow: ellipsis; /* Add ... if name is too long */
+      font-size: 13px; /* This is the reference size */
   }
   .delete-tab-btn {
       padding: 2px; /* Small padding */
@@ -346,7 +371,7 @@ body {
   /* Settings Submenu */
   .subdropdown {
       position: absolute;
-      left: -160px; /* Position to the left of the main dropdown */
+      left: -5px; /* Position very close to the settings dropdown */
       top: 0;
       background-color: var(--dropdown-bg);
       border: 1px solid var(--input-border-color);
@@ -401,7 +426,7 @@ body {
 
   .color-level-options span {
       margin-right: 10px;
-      font-size: 11px;
+      font-size: 13px;
       opacity: 0.8;
   }
 
@@ -420,4 +445,22 @@ body {
 
   .color-level-btn.active {
       border: 2px solid var(--text-color);
+  }
+  
+  /* Rainbow button for four-square mode */
+  .color-level-btn[data-level="-1"] {
+      background: linear-gradient(to right, 
+          #ff0000, #ff7f00, #ffff00, #00ff00, 
+          #0000ff, #4b0082, #9400d3);
+      opacity: 0.8;
+      display: none; /* Hidden by default, shown in four-square mode */
+  }
+  
+  .color-level-btn[data-level="-1"]:hover {
+      opacity: 1;
+  }
+  
+  /* Show rainbow button only in four-square mode */
+  body.four-square-mode .color-level-btn[data-level="-1"] {
+      display: block;
   }
