@@ -21,6 +21,12 @@
         "zip"
       ]
     },
+    "win": {
+      "icon": "build/icons/icon.ico",
+      "target": [
+        "portable"
+      ]
+    },
     "mas": {
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
