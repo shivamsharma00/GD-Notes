@@ -1,60 +1,30 @@
+// preload.js
 const { contextBridge, ipcRenderer } = require('electron');
-const fs = require('fs').promises;
-const os = require('os');
-const path = require('path');
-const { app } = require('electron');
-
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Window Controls
+  closeWindow: () => ipcRenderer.send('close-window'),
+  minimizeWindow: () => ipcRenderer.send('minimize-window'),
 
-    closeWindow: () => ipcRenderer.send('close-window'),
-    minimizeWindow: () => ipcRenderer.send('minimize-window'),
+  // Tab/Window Management
+  createNewTabWindow: (options) => ipcRenderer.invoke('create-new-tab-window', options),
+  openTabWindow: (tabId) => ipcRenderer.invoke('open-tab-window', tabId),
 
-    // File Operations
-    readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
-    writeFile: (filePath, data) => ipcRenderer.invoke('write-file', filePath, data),
-    createDataDir: (dirPath) => ipcRenderer.invoke('create-data-dir', dirPath),
+  // Storage Access
+  initializeStorage: () => ipcRenderer.invoke('initialize-storage'),
+  getGlobalSettings: () => ipcRenderer.invoke('get-global-settings'),
+  updateGlobalSettings: (newSettings) => ipcRenderer.invoke('update-global-settings', newSettings),
+  getAllTabs: () => ipcRenderer.invoke('get-all-tabs'),
+  addOrUpdateTab: (tabData) => ipcRenderer.invoke('add-or-update-tab', tabData),
+  removeTab: (tabId) => ipcRenderer.invoke('remove-tab', tabId),
+  // Removed addJournalEntry
 
-    // utility functions
-    getHomeDir: () => os.homedir(),
-    joinPath: (...paths) => path.join(...paths),
-
-    existsSync: (filePath) => fs.existsSync(filePath),
-    mkdirSync: (dirPath, options) => fs.mkdirSync(dirPath, options),
-    writeFileSync: (filePath, data, encoding) => fs.writeFileSync(filePath, data, encoding),
-    
-    getAppDataPath: () => ipcRenderer.invoke('get-app-data-path'),
-
-    createDirectory: async (dirPath) => {
-        try {
-            await fs.mkdir(dirPath, { recursive: true });
-            return true;
-        } catch (error) {
-            console.error('Failed to create directory:', error);
-            return false;
-        }
-    },
-
-    directoryExists: async (dirPath) => {
-        try {
-          await fs.access(dirPath);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-    fileExists: async (filePath) => {
-        try {
-          await fs.access(filePath);
-          return true;
-        } catch {
-          return false;
-        }
-      },
-    // readFile: (filePath) => fs.readFileSync(filePath, 'utf8'),
-    // writeFile: (filePath, data) => fs.writeFileSync(filePath, data, 'utf8'),
-    // ipcRenderer: {
-    //     send: (channel, data) => ipcRenderer.send(channel, data),
-    //     on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
-    // },
+  // Event Listener from Main
+  onInitNewTab: (callback) => {
+    // Ensure we don't add duplicate listeners if preload script re-runs
+    ipcRenderer.removeAllListeners('init-new-tab');
+    ipcRenderer.on('init-new-tab', (event, options) => {
+      callback(event, options);
+    });
+  }
 });

@@ -1,630 +1,433 @@
-// UI Module
-// import Storage from './storage.js';
-import Utils from './utils.js';
-import Storage from './storage.js';
+// ui.js
+import Utils from './utils.js'; // Retain any utility functions if needed
 
-// Elements
 let textBox = [];
-let closeBtn, minimizeBtn, settingsBtn, settingsModal, closeSettingsBtn;
-let fontSelect, fontSizeSelect, themeToggle, themeIcon, shadowColorPicker;
-let textBoxThemeSelect, saveSettingsBtn;
+let settingsModal, fontSelect, fontSizeSelect, themeToggle, textBoxThemeSelect, saveSettingsBtn;
+let newTabBtn, newTabDropdown, tabsDropdownBtn, tabsDropdown;
+let currentTab = null;
 
-let journalActive = false;
-let moodJournals = [];
+const COLOR_THEMES = {
+    default: { light: ['#ffffff', '#f0f0f0', '#e0e0e0', '#d0d0d0'], dark: ['#1e1e1e', '#2e2e2e', '#3e3e3e', '#4e4e4e'] },
+    warm:    { light: ['#FFF5F5', '#FFE6E6', '#FFCCCC', '#FFB3B3'], dark: ['#331A1A', '#4D1F1F', '#662626', '#803030'] },
+    cool:    { light: ['#E6F7FF', '#CCF0FF', '#B3E6FF', '#99DBFF'], dark: ['#1A3333', '#1F4D4D', '#266666', '#308080'] },
+    nature:  { light: ['#E8F5E9', '#C8E6C9', '#A5D6A7', '#81C784'], dark: ['#1B5E20', '#2E7D32', '#388E3C', '#43A047'] },
+    sunset:  { light: ['#FFF3E0', '#FFE0B2', '#FFCC80', '#FFB74D'], dark: ['#BF360C', '#D84315', '#E64A19', '#F4511E'] },
+    blue:    { light: ['#E6F7FF', '#CCF0FF', '#B3E6FF', '#99DBFF'], dark: ['#080d14', '#141928', '#1e293c', '#28344c'] },
+};
 
 const initialize = () => {
     textBox = [
         document.getElementById('text-box-1'),
         document.getElementById('text-box-2'),
         document.getElementById('text-box-3'),
-        document.getElementById('text-box-4'),
+        document.getElementById('text-box-4')
     ];
-
-    closeBtn = document.getElementById('close-btn');
-    minimizeBtn = document.getElementById('minimize-btn');
-    settingsBtn = document.getElementById('settings-btn');
     settingsModal = document.getElementById('settings-modal');
-    closeSettingsBtn = document.getElementById('close-settings');
     fontSelect = document.getElementById('font-select');
     fontSizeSelect = document.getElementById('font-size-select');
     themeToggle = document.getElementById('theme-toggle');
-    themeIcon = document.getElementById('theme-icon');
-    shadowColorPicker = document.getElementById('shadow-color');
     textBoxThemeSelect = document.getElementById('text-box-theme');
     saveSettingsBtn = document.getElementById('save-settings');
-
-    // return Promise.resolve();
+    newTabBtn = document.getElementById('new-tab-btn');
+    newTabDropdown = document.getElementById('new-tab-dropdown');
+    tabsDropdownBtn = document.getElementById('tabs-dropdown-btn');
+    tabsDropdown = document.getElementById('tabs-dropdown');
     return textBox;
-};
-
-function setupEventListeners() {
-    console.log('setupEventListeners');
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            console.log('closeBtn clicked');
-            window.electronAPI.closeWindow();
-        });
-    }
-    if (minimizeBtn) {
-        minimizeBtn.addEventListener('click', () => {
-            console.log('minimizeBtn clicked');
-            window.electronAPI.minimizeWindow();
-        });
-    }
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
-    }
-    if (closeSettingsBtn) {
-        closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
-    }
-
-    if (shadowColorPicker) {
-        shadowColorPicker.addEventListener('input', async (e) => {
-            const selectedColor = e.target.value;
-            document.body.style.setProperty('--status-shadow-color', selectedColor);
-            const settings = (await Storage.loadSettings()) || {};
-            settings.statusShadowColor = selectedColor;
-            await Storage.saveSettings(settings);
-        });
-    }
-
-    // Font Selection Event Listeners
-    if (fontSelect) {
-        fontSelect.addEventListener('change', async (e) => {
-            document.body.style.setProperty('--font-family', e.target.value);
-            const settings = await Storage.loadSettings() || {};
-            settings.fontFamily = e.target.value;
-            await Storage.saveSettings(settings);
-        });
-    }
-
-    if (fontSizeSelect) {
-        fontSizeSelect.addEventListener('change', async (e) => {
-        document.body.style.setProperty('--font-size', e.target.value);
-        const settings = await Storage.loadSettings() || {};
-        settings.fontSize = e.target.value;
-            await Storage.saveSettings(settings);
-        });
-    }
-
-    // Toggle Dark/Light Mode
-    if (themeToggle) {
-        themeToggle.addEventListener('click', async () => {
-            const isDarkMode = themeToggle.checked;
-            applyDarkMode(isDarkMode);
-            const settings = await Storage.loadSettings() || {};
-            settings.isDarkMode = isDarkMode;
-            await Storage.saveSettings(settings);
-            // console.log('themeToggle clicked', isDarkMode);
-        });
-    }
-
-    // Text box event listeners
-    if (textBoxThemeSelect) {
-        textBoxThemeSelect.addEventListener('change', async (e) => {
-            const selectedTheme = e.target.value;
-            applyTextBoxTheme(selectedTheme);
-            const settings = (await Storage.loadSettings()) || {};
-            settings.textBoxTheme = selectedTheme;
-            await Storage.saveSettings(settings);
-        });
-    }
-    if (saveSettingsBtn) {
-        saveSettingsBtn.addEventListener('click', async () => {
-            await saveSettings();
-            settingsModal.classList.add('hidden');
-        });
-    }
-    setupTextBoxEventListeners();
-};
-
-async function saveSettings() {
-    const settings = await Storage.loadSettings() || {};
-    
-    settings.fontFamily = fontSelect.value;
-    settings.fontSize = fontSizeSelect.value;
-    settings.isDarkMode = themeToggle.checked;
-    settings.textBoxTheme = textBoxThemeSelect.value;
-    settings.statusShadowColor = shadowColorPicker.value;
-    
-    // Save API keys if needed
-    settings.apiKeys = {
-        telegramChatId: document.getElementById('telegram-chat-id').value,
-        openAIAPIKey: document.getElementById('openai-api-key').value,
-        perplexityAPIKey: document.getElementById('perplexity-api-key').value,
-    };
-    
-    await Storage.saveSettings(settings);
-    applySettings(settings);
-}
-
-function setupTextBoxEventListeners() {
-    textBox.forEach((box, index) => {
-        if (box) {
-            box.addEventListener('keydown', (e) => handleTextBoxKeyDown(e, box, index));
-            box.addEventListener('input', async () => {
-                // await Storage.saveContent(index, box.innerHTML);
-                debouncedSave(index, box.innerHTML);
-            });
-        }
-    });
-}
-
-// Function to handle keydown events in text boxes
-function handleTextBoxKeyDown(e, box, index) {
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) return;
-    
-    const range = selection.getRangeAt(0);
-    const textNode = range.startContainer;
-    const textContent = textNode.textContent;
-    const beforeCursor = textContent.substring(0, range.startOffset);
-    
-    // Check if currently inside a journal entry
-    const journalEntry = box.querySelector('.journal-entry');
-    const isInJournal = journalEntry && isSelectionInside(journalEntry);
-    
-    if (e.key === ' ' || e.key === 'Enter') {
-        // Handle -j command
-        if (beforeCursor.trim().endsWith('-j')) {
-            e.preventDefault();
-            if (textNode.nodeType === Node.TEXT_NODE) {
-                textNode.textContent = textContent.replace(/-j\s*$/, '');
-                }
-            toggleJournalMode(box, index);
-            return;
-        } else if (isInJournal) {
-            // Inside Journal Mode
-            const journalRange = selection.getRangeAt(0);
-            const journalTextNode = journalRange.startContainer;
-            const journalTextContent = journalTextNode.textContent;
-            const journalBeforeCursor = journalTextContent.substring(0, journalRange.startOffset);
-
-            if (journalBeforeCursor.trim().endsWith('-j')) {
-                e.preventDefault();
-                if (journalTextNode.nodeType === Node.TEXT_NODE) {
-                    journalTextNode.textContent = journalTextContent.replace(/-j\s*$/, '');
-                }
-                toggleJournalMode(box, index);
-                return;
-            }
-        }
-
-        if (beforeCursor.trim().endsWith('*') || beforeCursor.trim().endsWith('-')) {
-            // Handle bullet points
-            e.preventDefault();
-            createBulletPoint(range, textNode, textContent, beforeCursor);
-            return;
-        } else if (beforeCursor.trim().endsWith('[]')) {
-            // Handle checkbox
-            e.preventDefault();
-            createCheckbox(range, textNode, textContent, beforeCursor);
-            return;
-        }
-    }
-    if (e.key === 'Enter') {
-        handleAutoContinuation(e, box, index);
-    }
-    if (e.key === 'Backspace') {
-        handleBackspace(e, box, index);
-    }
-}
-
-// Function to create bullet point
-function createBulletPoint(range, textNode, textContent, beforeCursor) {
-    // Remove the '* ' or '- ' from the text
-    textNode.textContent =
-    textContent.substring(0, beforeCursor.length - 1) + textContent.substring(range.startOffset);
-    
-    // Create a new list item
-    const li = document.createElement('li');
-    li.innerHTML = '<br>'; // Placeholder
-    const ul = document.createElement('ul');
-    ul.appendChild(li);
-    
-    // Replace the current line with the list
-    range.deleteContents();
-    range.insertNode(ul);
-    
-    // Move cursor into the new list item
-    placeCursorAtStart(li);
-}
-
-  // Function to create checkbox
-function createCheckbox(range, textNode, textContent, beforeCursor) {
-    // Remove the '[] ' from the text
-    textNode.textContent =
-        textContent.substring(0, beforeCursor.length - 2) + textContent.substring(range.startOffset);
-    
-    // Create a new paragraph with checkbox
-    const p = document.createElement('p');
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    p.appendChild(checkbox);
-    p.appendChild(document.createTextNode(' '));
-    
-    // Insert the paragraph
-    range.deleteContents();
-    range.insertNode(p);
-    
-    // Move cursor after the checkbox
-    placeCursorAtEnd(p);
-}
-    
-  // Function to handle auto continuation
-function handleAutoContinuation(e, box, index) {
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) return;
-    const range = selection.getRangeAt(0);
-    const currentNode = range.startContainer;
-    
-    // Get the current element
-    // let currentElement = currentNode;
-    let currentElement = currentNode.nodeType === Node.TEXT_NODE ? 
-        currentNode.parentElement : 
-        currentNode;
-        
-    while (currentElement && !currentElement.matches('li, p')) {
-        currentElement = currentElement.parentElement;
-    }
-    if (!currentElement) return;
-    
-    if (currentElement.matches('li')) {
-        e.preventDefault();
-        
-        // If the list item is empty, exit the list
-        if (currentElement.textContent.trim() === '') {
-            // Remove the empty list item
-            const ul = currentElement.parentElement;
-            currentElement.remove();
-        
-        // If the list is empty, remove it
-        if (ul.children.length === 0) {
-            ul.remove();
-        }
-        
-        // Insert a paragraph
-        const p = document.createElement('p');
-        p.innerHTML = '<br>';
-        range.insertNode(p);
-            placeCursorAtStart(p);
-        } else {
-            // Create a new list item
-            const newLi = document.createElement('li');
-            newLi.innerHTML = '<br>';
-            currentElement.parentElement.insertBefore(newLi, currentElement.nextSibling);
-            placeCursorAtStart(newLi);
-        }
-    } else if (currentElement.matches('p') && currentElement.querySelector('input[type="checkbox"]')) {
-        e.preventDefault();
-        
-        // If the paragraph is empty, exit the checkbox mode
-        if (currentElement.textContent.trim() === '') {
-        // Remove the empty paragraph
-            currentElement.remove();
-            
-            // Insert a new paragraph
-            const p = document.createElement('p');
-            p.innerHTML = '<br>';
-            range.insertNode(p);
-            placeCursorAtStart(p);
-        } else {
-            // Create a new paragraph with checkbox
-            const p = document.createElement('p');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            p.appendChild(checkbox);
-            p.appendChild(document.createTextNode(' '));
-            p.innerHTML += '<br>';
-            
-            currentElement.parentElement.insertBefore(p, currentElement.nextSibling);
-            placeCursorAtStart(p);
-        }
-    }
-}
-    
-  // Function to handle backspace
-function handleBackspace(e, box, index) {
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const currentNode = range.startContainer;
-
-    // Get the current element, making sure we get an Element node, not a Text node
-    let currentElement = currentNode.nodeType === Node.TEXT_NODE ? 
-        currentNode.parentElement : 
-        currentNode;
-    
-    // Get the current element
-    // let currentElement = currentNode;
-    // while (currentElement && currentElement.nodeType !== Node.ELEMENT_NODE) {
-    //     currentElement = currentElement.parentElement;
-    // }
-    // if (!currentElement) return;
-    
-    while (currentElement && !currentElement.matches('li, p')) {
-        currentElement = currentElement.parentElement;
-    }
-    if (!currentElement) return;
-    
-    if (currentElement.matches('li')) {
-      // If the list item is empty, and backspace is pressed, exit the list
-        if (currentElement.textContent.trim() === '') {
-            e.preventDefault();
-            const ul = currentElement.parentElement;
-            currentElement.remove();
-            
-            // If the list is empty, remove it
-            if (ul.children.length === 0) {
-                ul.remove();
-            }
-            // Insert a paragraph
-            const p = document.createElement('p');
-            p.innerHTML = '<br>';
-            range.insertNode(p);
-            placeCursorAtStart(p);
-        }
-    } else if (currentElement.matches('p') && currentElement.querySelector('input[type="checkbox"]')) {
-      // If the paragraph is empty, and backspace is pressed, exit checkbox mode
-        if (currentElement.textContent.trim() === '') {
-            e.preventDefault();
-            currentElement.remove();
-            
-            // Insert a new paragraph
-            const p = document.createElement('p');
-            p.innerHTML = '<br>';
-            range.insertNode(p);
-            placeCursorAtStart(p);
-        }
-    }
-}
-
-  // Function to place cursor at the start of an element
-function placeCursorAtStart(element) {
-    if (!element) return;
-
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.setStart(element, 0);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    }
-
-// Function to place cursor at the end of an element
-function placeCursorAtEnd(element) {
-    if (!element) return;
-
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(element);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-}
-
-// Function to check if the current selection is inside a specific element
-function isSelectionInside(element) {
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) return false;
-    let node = selection.getRangeAt(0).commonAncestorContainer;
-    while (node) {
-        if (node === element) return true;
-        node = node.parentNode;
-    }
-    return false;
-}
-
-// Function to toggle journal mode
-function toggleJournalMode(box, index) {
-    if (!journalActive) {
-      // Start journal mode
-        journalActive = true;
-
-        // Insert Journal Container on the next line
-        const journalContainer =
-        '<p class="journal-entry" contenteditable="true" style="white-space: pre-wrap;">Journal mode active. Type your entry here. Use -j to end.</p>';
-        const journalNode = insertHtmlOnNewLine(journalContainer);
-        
-        // Ensure the cursor is placed inside the journal-entry on a new line
-        if (journalNode && journalNode.classList.contains('journal-entry')) {
-        // Move cursor into the journal entry
-            placeCursorAtEnd(journalNode);
-        } else {
-            console.error('Journal node not found or does not have the correct class');
-        }
-    } else {
-      // End journal mode
-        journalActive = false;
-      // Extract journal content
-        const journalEntry = box.querySelector('.journal-entry');
-        let journalText = '';
-        if (journalEntry) {
-        journalText = journalEntry.innerText;
-            journalEntry.remove();
-        }
-
-        const timestamp = new Date().toISOString();
-        moodJournals.push({
-            timestamp: timestamp,
-            journal: journalText,
-            mood: '',
-        });
-        Storage.saveMoodJournals(moodJournals);
-        
-        insertTextAtCursor('');
-    }
-}
-
-// Function to insert HTML on a new line
-function insertHtmlOnNewLine(html) {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-
-        // Move to the end of current line
-        range.setStartAfter(range.endContainer);
-        
-        // Insert a line break
-        const br = document.createElement('br');
-        range.insertNode(br);
-        range.setStartAfter(br);
-        
-        // Insert the HTML content
-        const el = document.createElement('div');
-        el.innerHTML = html;
-        const frag = document.createDocumentFragment();
-        let node;
-        while ((node = el.firstChild)) {
-            frag.appendChild(node);
-        }
-        range.insertNode(frag);
-        
-      // Move cursor into the inserted content
-        if (node) {
-            range.setStart(node, 0);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
-            return node;
-        }
-    }
-    return null;
-}
-
-// Function to insert text at cursor
-function insertTextAtCursor(text) {
-    const selection = window.getSelection();
-    const range = selection.getRangeAt(0);
-    const textNode = document.createTextNode(text);
-    range.insertNode(textNode);
-    range.setStartAfter(textNode);
-    range.setEndAfter(textNode);
-    selection.removeAllRanges();
-    selection.addRange(range);
-}
-
-// Function to apply dark mode
-const applyDarkMode = async (isDarkMode) => {
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    themeIcon.src = isDarkMode ? 'assets/light-mode.png' : 'assets/dark-mode.png';
-    // Re-apply settings
-    const settings = await Storage.loadSettings() || {};
-    applyTextBoxTheme(settings.textBoxTheme || 'default');
-    console.log('applyDarkMode', isDarkMode);
 };
 
 function applySettings(settings) {
     if (!settings) return;
-    
-    // Apply Font Family
-    const fontFamily = settings.fontFamily || "'Open Sans', sans-serif";
-    fontSelect.value = fontFamily;
-    document.documentElement.style.setProperty('--font-family', fontFamily);
-    
-    // Apply Font Size
-    const fontSize = settings.fontSize || '16px';
-    fontSizeSelect.value = fontSize;
-    document.documentElement.style.setProperty('--font-size', fontSize);
-    
-    // Apply Text Box Theme
-    const textBoxTheme = settings.textBoxTheme || 'default';
-    const textBoxThemeSelect = document.getElementById('text-box-theme');
-    textBoxThemeSelect.value = textBoxTheme;
-    if (textBoxTheme !== 'default') {
-        applyTextBoxTheme(textBoxTheme);
+    document.body.style.setProperty('--font-family', settings.defaultFontFamily);
+    document.body.style.setProperty('--font-size', settings.defaultFontSize);
+    if (settings.theme === 'dark') {
+        document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
     }
-
-    // Apply Status Shadow Color
-    const statusShadowColor = settings.statusShadowColor || '#eb280a';
-    shadowColorPicker.value = statusShadowColor;
-    document.body.style.setProperty('--status-shadow-color', statusShadowColor);
-
-    // Apply Dark Mode
-    const isDarkMode = settings.isDarkMode || false;
-    themeToggle.checked = isDarkMode;
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    document.body.classList.toggle('dark-mode-active', isDarkMode);
-    themeIcon.src = isDarkMode ? 'assets/light-mode.png' : 'assets/dark-mode.png';
-};
-
-function getContrastYIQ(hexcolor){
-    hexcolor = hexcolor.replace('#', '');
-    const r = parseInt(hexcolor.substr(0,2),16);
-    const g = parseInt(hexcolor.substr(2,2),16);
-    const b = parseInt(hexcolor.substr(4,2),16);
-    const yiq = ((r*299)+(g*587)+(b*114))/1000;
-    return (yiq >= 128) ? '#000000' : '#ffffff';
 }
 
-function applyTextBoxTheme(theme) {
-    const themes = {
-        default: {
-            light: ['#ffffff', '#f0f0f0', '#e0e0e0', '#d0d0d0'],
-            dark: ['#1e1e1e', '#2e2e2e', '#3e3e3e', '#4e4e4e'],
-        },
-        warm: {
-            light: ['#FFF5F5', '#FFE6E6', '#FFCCCC', '#FFB3B3'],
-            dark: ['#331A1A', '#4D1F1F', '#662626', '#803030'],
-        },
-        cool: {
-            light: ['#E6F7FF', '#CCF0FF', '#B3E6FF', '#99DBFF'],
-            dark: ['#1A3333', '#1F4D4D', '#266666', '#308080'],
-        },
-        nature: {
-            light: ['#E8F5E9', '#C8E6C9', '#A5D6A7', '#81C784'],
-            dark: ['#1B5E20', '#2E7D32', '#388E3C', '#43A047'],
-        },
-        sunset: {
-            light: ['#FFF3E0', '#FFE0B2', '#FFCC80', '#FFB74D'],
-            dark: ['#BF360C', '#D84315', '#E64A19', '#F4511E'],
-        },
-        blue: {
-            light: ['#E6F7FF', '#CCF0FF', '#B3E6FF', '#99DBFF'],
-            dark: ['#080d14', '#141928', '#1e293c', '#28344c'],
-        },
-    };
-
-    // const isDarkMode = themeToggle.checked ? 'dark' : 'light';
-    const isDarkMode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-    // const colors = themes[theme][isDarkMode] || [];
+function initTabs(tabsArray) {
+    if (!tabsDropdown) return;
     
-    if (theme === 'default') {
-        textBox.forEach((box) => {
-            box.style.backgroundColor = '';
-            box.style.color = '';
+    tabsDropdown.innerHTML = '';
+    if (!tabsArray || tabsArray.length === 0) {
+        tabsDropdown.innerHTML = '<div class="tab-entry">No tabs yet</div>';
+        return;
+    }
+    }
+    
+    tabsArray.forEach(tab => {
+        const entry = document.createElement('div');
+        entry.className = 'tab-entry';
+        
+        // Create a span for the tab name
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = tab.name || tab.id;
+        nameSpan.className = 'tab-name';
+        
+        // Add click event to the name span to open the tab
+        nameSpan.addEventListener('click', () => {
+            window.electronAPI.createNewWindow(tab)
+                .then(() => console.log('Tab window opened for:', tab.id))
+                .catch(console.error);
         });
-    } else {
-        const colors = themes[theme][isDarkMode] || [];
+        
+        // Create delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-tab-btn';
+        const deleteImg = document.createElement('img');
+        deleteImg.src = 'assets/delete.png'; // Ensure this icon exists in your assets folder
+        deleteImg.alt = 'Delete Tab';
+        deleteBtn.appendChild(deleteImg);
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the tab open
+            window.electronAPI.removeTab(tab.id)
+                .then(() => {
+                    entry.remove();
+                    console.log('Tab removed:', tab.id);
+                })
+                .catch(console.error);
+        });
+        
+        entry.appendChild(nameSpan);
+        entry.appendChild(deleteBtn);
+        tabsDropdown.appendChild(entry);
+    });
 
-        textBox.forEach((box, index) => {
-            const bgColor = colors[index % colors.length];
-            const textColor = getContrastYIQ(bgColor);
+
+function createTabElement(tab) {
+  const container = document.getElementById('text-box-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (tab.layout === 'single') {
+    console.log("Creating single layout");
+    container.className = 'single-layout';
+    const singleBox = document.createElement('div');
+    singleBox.className = 'text-box single-box';
+    singleBox.id = 'text-box-1';
+    singleBox.contentEditable = "true";
+    // Use the content from the first note
+    singleBox.innerHTML = tab.notes && tab.notes[0] ? tab.notes[0].content : "";
+    
+    // Apply appearance settings
+    if (tab.appearance) {
+      singleBox.style.backgroundColor = tab.appearance.backgroundColor || "#ffffff";
+      singleBox.style.color = tab.appearance.textColor || "#000000";
+      singleBox.style.fontFamily = tab.appearance.fontFamily || "'Open Sans', sans-serif";
+      singleBox.style.fontSize = tab.appearance.fontSize || "16px";
+    }
+    
+    // Add input event listener
+    singleBox.addEventListener('input', () => {
+      console.log("Text input detected in single box");
+      if (tab.notes && tab.notes[0]) {
+        tab.notes[0].content = singleBox.innerHTML;
+        tab.notes[0].metadata.lastModified = new Date().toISOString();
+      } else {
+        // Create notes array if it doesn't exist
+        tab.notes = [{
+          id: "note-1",
+          content: singleBox.innerHTML,
+          metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+        }];
+      }
+      window.electronAPI.addOrUpdateTab(tab)
+        .catch(err => console.error('Error saving tab content:', err));
+    });
+    
+    container.appendChild(singleBox);
+    textBox = [singleBox];
+    
+  } else if (tab.layout === 'four-square') {
+    console.log("Creating four-square layout");
+    container.className = 'four-square-layout';
+    
+    for (let i = 0; i < 4; i++) {
+        const box = document.createElement('textarea');
+        box.className = 'text-box';
+        box.id = `text-box-${i+1}`;
+        box.contentEditable = "true";
+        
+        // Get content from notes if available
+        if (tab.notes && tab.notes[i]) {
+            box.value = tab.notes[i].content || "";
+        }
+        
+        // Apply appearance settings
+        if (tab.appearance) {
+            // Handle both single color for all boxes and individual colors
+            const bgColor = tab.appearance.backgroundColor && tab.appearance.backgroundColor[i] 
+            ? tab.appearance.backgroundColor[i] 
+            : tab.appearance.backgroundColor || "#ffffff";
+            
+            const textColor = tab.appearance.textColor && tab.appearance.textColor[i]
+            ? tab.appearance.textColor[i]
+            : tab.appearance.textColor || "#000000";
+            
             box.style.backgroundColor = bgColor;
             box.style.color = textColor;
+            box.style.fontFamily = tab.appearance.fontFamily || "'Open Sans', sans-serif";
+            box.style.fontSize = tab.appearance.fontSize || "16px";
+            }
+            
+            // Add input event listener to each box
+            box.addEventListener('input', () => {
+            console.log(`Text input detected in box ${i+1}`);
+        
+            // Ensure the notes array exists and has enough elements
+            if (!tab.notes) {
+                tab.notes = [];
+            }
+        
+            if (!tab.notes[i]) {
+                tab.notes[i] = {
+                    id: `note-${i+1}`,
+                    content: "",
+                    metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+                };
+            }
+        
+            tab.notes[i].content = box.value;
+            tab.notes[i].metadata.lastModified = new Date().toISOString();
+        
+            window.electronAPI.addOrUpdateTab(tab)
+            .catch(err => console.error(`Error saving content for box ${i+1}:`, err));
+            });
+            
+            container.appendChild(box);
+        }
+        // Update textBox array with references to all four boxes
+        textBox = Array.from(container.querySelectorAll('.text-box'));
+        }
+    // At the end of createTabElement:
+    currentTab = tab;
+    console.log(`Created tab element with ${textBox.length} text boxes`);
+}
+
+function setupEventListeners() {
+    const closeBtn = document.getElementById('close-btn');
+    const minimizeBtn = document.getElementById('minimize-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsDropdown = document.getElementById('settings-dropdown');
+    
+    // Window control buttons
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => window.electronAPI.closeWindow());
+    }
+    
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', () => window.electronAPI.minimizeWindow());
+    }
+    
+    // Ensure all dropdowns start hidden
+    if (newTabDropdown) newTabDropdown.classList.add('hidden');
+    if (tabsDropdown) tabsDropdown.classList.add('hidden');
+    if (settingsDropdown) settingsDropdown.classList.add('hidden');
+    
+    // Settings dropdown toggle
+    if (settingsBtn && settingsDropdown) {
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsDropdown.classList.toggle('hidden');
+            
+            // Close other dropdowns when opening this one
+            if (!settingsDropdown.classList.contains('hidden')) {
+                if (newTabDropdown) newTabDropdown.classList.add('hidden');
+                if (tabsDropdown) tabsDropdown.classList.add('hidden');
+            }
         });
     }
-}
+    
+    // Handle font selection
+    const fontDropdown = document.getElementById('font-dropdown');
+    const fontOptions = document.querySelectorAll('.font-option');
+    
+    if (fontOptions) {
+        fontOptions.forEach(option => {
+            option.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const fontFamily = option.dataset.font;
+                document.body.style.setProperty('--font-family', fontFamily);
+                await window.electronAPI.updateGlobalSettings({ defaultFontFamily: fontFamily });
+                
+                // Update the selected font display
+                const fontButton = document.getElementById('font-button');
+                if (fontButton) {
+                    fontButton.textContent = option.textContent;
+                }
+                
+                // Hide dropdowns
+                if (fontDropdown) fontDropdown.classList.add('hidden');
+                if (settingsDropdown) settingsDropdown.classList.add('hidden');
+            });
+        });
+    }
+    
+    // Handle font size selection
+    const fontSizeDropdown = document.getElementById('font-size-dropdown');
+    const fontSizeOptions = document.querySelectorAll('.font-size-option');
+    
+    if (fontSizeOptions) {
+        fontSizeOptions.forEach(option => {
+            option.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const fontSize = option.dataset.size;
+                document.body.style.setProperty('--font-size', fontSize);
+                // Update all text boxes with the new font size
+                document.querySelectorAll('.text-box').forEach(box => {
+                    box.style.fontSize = fontSize;
+                });
+                await window.electronAPI.updateGlobalSettings({ defaultFontSize: fontSize });
+                
+                // Update the selected size display
+                const fontSizeButton = document.getElementById('font-size-button');
+                if (fontSizeButton) {
+                    fontSizeButton.textContent = option.textContent;
+                }
+                
+                // Hide dropdowns
+                if (fontSizeDropdown) fontSizeDropdown.classList.add('hidden');
+                if (settingsDropdown) settingsDropdown.classList.add('hidden');
+            });
+        });
+    }
+    
+    // Handle theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('change', async () => {
+            const isDark = themeToggle.checked;
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-icon').src = 'assets/light-mode.png';
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('theme-icon').src = 'assets/dark-mode.png';
+            }
+        });
+    }
+    
+    // New tab dropdown
+    if (newTabBtn && newTabDropdown) {
+        newTabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            newTabDropdown.classList.toggle('hidden');
+            
+            // Close other dropdowns when opening this one
+            if (!newTabDropdown.classList.contains('hidden')) {
+                if (tabsDropdown) tabsDropdown.classList.add('hidden');
+                if (settingsDropdown) settingsDropdown.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Tab option buttons
+    const newTabOptions = document.querySelectorAll('.new-tab-option');
+    if (newTabOptions) {
+        newTabOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const layout = option.dataset.layout;
+                const tabId = 'tab-' + Date.now();
+                const newTab = {
+                    id: tabId,
+                    layout: layout,
+                    name: layout === 'single' ? 'Single Note Pad' : 'Four Square Tab',
+                    window: { 
+                        x: 100, y: 100, 
+                        width: layout === 'four-square' ? 600 : 400, 
+                        height: layout === 'four-square' ? 600 : 400, 
+                        isMaximized: false 
+                    },
+                    appearance: {
+                        backgroundColor: "#ffffff",
+                        textColor: "#000000",
+                        fontFamily: "'Open Sans', sans-serif",
+                        fontSize: "16px",
+                        isDarkMode: document.body.classList.contains('dark-mode')
+                    },
+                    notes: layout === 'four-square'
+                        ? ["", "", "", ""].map((content, i) => ({
+                            id: `note-${i+1}`,
+                            content: content,
+                            metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+                        }))
+                        : [{ id: "note-1", content: "", metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() } }],
+                    metadata: { created: new Date().toISOString(), modified: new Date().toISOString() }
+                };
+                
+                window.electronAPI.createNewWindow(newTab)
+                    .then(() => window.electronAPI.addOrUpdateTab(newTab))
+                    .catch(console.error);
+                
+                newTabDropdown.classList.add('hidden');
+            });
+        });
+    }
+    
+    // Tabs dropdown
+    if (tabsDropdownBtn && tabsDropdown) {
+        tabsDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tabsDropdown.classList.toggle('hidden');
+            
+            // Close other dropdowns when opening this one
+            if (!tabsDropdown.classList.contains('hidden')) {
+                if (newTabDropdown) newTabDropdown.classList.add('hidden');
+                if (settingsDropdown) settingsDropdown.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Font submenu toggle
+    const fontButton = document.getElementById('font-button');
+    if (fontButton && fontDropdown) {
+        fontButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fontDropdown.classList.toggle('hidden');
+            
+            // Close other submenus
+            if (fontSizeDropdown) fontSizeDropdown.classList.add('hidden');
+        });
+    }
 
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
+    
+    
+    // Font size submenu toggle
+    const fontSizeButton = document.getElementById('font-size-button');
+    if (fontSizeButton && fontSizeDropdown) {
+        fontSizeButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fontSizeDropdown.classList.toggle('hidden');
+            
+            // Close other submenus
+            if (fontDropdown) fontDropdown.classList.add('hidden');
+        });
+    }
+    
+    // Global click handler to close all dropdowns
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown') && 
+            !e.target.closest('#new-tab-btn') && 
+            !e.target.closest('#tabs-dropdown-btn') && 
+            !e.target.closest('#settings-btn') &&
+            !e.target.closest('#font-button') &&
+            !e.target.closest('#font-size-button')) {
+            
+            if (newTabDropdown) newTabDropdown.classList.add('hidden');
+            if (tabsDropdown) tabsDropdown.classList.add('hidden');
+            if (settingsDropdown) settingsDropdown.classList.add('hidden');
+            if (fontDropdown) fontDropdown.classList.add('hidden');
+            if (fontSizeDropdown) fontSizeDropdown.classList.add('hidden');
+        }
+    });
 }
-
-const debouncedSave = debounce(async (index, content) => {
-    await Storage.saveContent(index, content);
-}, 1000);
 
 export default {
-    initialize,
-    get textBox() { return textBox; },
-    setupEventListeners,
-    applyDarkMode,
-    applySettings,
-    applyTextBoxTheme,
+  initialize,
+  applySettings,
+  initTabs,
+  createTabElement,
+  setupEventListeners
 };

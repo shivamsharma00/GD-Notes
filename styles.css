@@ -1,496 +1,466 @@
 /* Variables */
 :root {
-  --background-color: #ffffff00;
-  --settings-background-color: #ffffff;
+  --background-color: #ffffff;
   --text-color: #000000;
   --title-bar-color: #f0f0f0;
   --text-box-bg: #ffffff;
   --text-box-color: #000000;
   --toggle-bg-light: #ccc;
-  --toggle-bg-dark: #2196F3; 
-  --font-family: 'Helvetica Neue', sans-serif;
+  --toggle-bg-dark: #2196F3;
+  --font-family: 'Helvetica Neue', sans-serif; /* Default */
+  --font-size: 16px; /* Default */
   --status-label-color: #000000;
-  --status-shadow-color: #eb280a;
+  --border-radius: 8px; /* Common border radius value */
+  --hover-blue: #3498db; /* Sky blue for button hover */
 
-  --modal-background-color: #ffffff;
-  --modal-text-color: #000000;
-  /* --input-background-color: #f6f8fa; */
-  --input-background-color: #ffffff;
-  --input-text-color: #000000;
-  --input-border-color: #d0d7de;
-
-  --text-color-secondary: #000000;
   --dropdown-bg: #ffffff;
   --dropdown-text: #000000;
+  --input-border-color: #d0d7de;
+  --icon-filter: invert(0);
 }
 
 /* Dark Mode Variables */
 body.dark-mode {
-  --background-color: #ffffff00;
+  --background-color: #121212;
   --text-color: #FFFFFF;
   --title-bar-color: #090f18;
   --text-box-bg: #080d14;
   --text-box-color: #f0f0f0;
-  --toggle-bg-light: #090f18; 
+  --toggle-bg-light: #090f18;
   --toggle-bg-dark: #ccc;
   --status-label-color: #ffffff;
 
-  --modal-background-color: #1e1e1e;
-  --modal-text-color: #ffffff;
-  --input-background-color: #2e2e2e;
-  --input-text-color: #ffffff;
-  --input-border-color: #3e3e3e;
-
-  --text-color-secondary: #ffffff;
   --dropdown-bg: #2e2e2e;
   --dropdown-text: #ffffff;
+  --input-border-color: #3e3e3e;
+  --icon-filter: invert(1);
 }
 
 /* General Styles */
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden; 
+    overflow: hidden;
     font-family: var(--font-family);
     font-size: var(--font-size);
-    background-color: var(--background-color);
+    background-color: transparent; /* Make body transparent */
     color: var(--text-color);
     height: 100vh;
     display: flex;
     flex-direction: column;
-  }
+    border-radius: var(--border-radius); /* Curved edges for the whole window */
+}
 
   *, *:before, *:after {
     box-sizing: border-box;
   }
 
+  /* Container for the editable divs */
   #text-box-container {
-    /* flex:grid; */
-    position: relative;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 1px;
-    padding: 1px;
-    /* flex-grow: 1; */
-    overflow: hidden;
-    flex: 1;
-    margin-bottom: 1px;
-
-    /* height: calc(100vh - 50px); */
+    position: relative; /* Needed for potential absolute positioning of children? */
+    flex: 1; /* Take up remaining space */
+    overflow: hidden; /* Hide overflow */
+    display: flex; /* Default to flex for single layout */
+    padding: 1px; /* Optional spacing */
+    margin-bottom: 1px; /* Space before status bar */
+    border-radius: var(--border-radius) var(--border-radius) 0 0; /* Curved top edges */
+    background-color: transparent; /* Make container transparent */
   }
+
+  /* Styling for individual editable boxes */
   .text-box {
-    border: 0px solid #ccc;
-    padding: 8px;
-
+    border: 0px solid transparent; /* Transparent border */
+    padding: 10px;
     background-color: var(--text-box-bg);
-    color: var(--text-color);
-    font-size: var(--font-size);
-    font-family: var(--font-family);
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* overflow: hidden; */
-
+    color: var(--text-box-color);
+    font-size: var(--font-size); /* Use variable */
+    font-family: var(--font-family); /* Use variable */
+    border-radius: var(--border-radius) var(--border-radius) 0 0; /* Match container */
+    box-shadow: none; /* Remove shadow */
     resize: none;
     box-sizing: border-box;
-    overflow-y: auto;
-    height: 100%;
-    max-height: 100%;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow-y: auto; /* Enable scrolling */
+    height: 100%; /* Fill height */
+    width: 100%; /* Fill width */
+    -webkit-app-region: no-drag; /* Allow clicking/editing */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
   }
 
-  .text-box::-webkit-scrollbar {
+  .text-box::-webkit-scrollbar { /* Chrome/Safari/Opera */
     display: none;
   }
+
   .text-box:focus {
-    outline: none;
+    outline: none; /* Remove focus outline */
   }
-  .text-box{
-    resize: none;
+
+  /* Layout Specific Styles for the Container */
+  #text-box-container.single-layout {
+    display: flex; /* Single item takes full space */
   }
-  /* Title Bar */
-  #title-bar {
-    height: 30px;
-    background-color: var(--title-bar-color, #f0f0f0);
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
+  #text-box-container.single-layout .text-box {
+      flex: 1; /* Ensure it fills the container */
   }
-  
-  #drag-region {
-    -webkit-app-region: drag;
-    flex-grow: 1;
-    height: 100%;
+
+  #text-box-container.four-square-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 1px;
   }
-  
-  /* Content */
-  #content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  
+  /* No specific styles needed for .text-box in four-square as grid handles sizing */
+
+
   /* Status Bar */
   #status-bar {
-    height: 16px;
+    height: 24px; /* Slightly taller for easier hovering */
     background-color: var(--title-bar-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid #ccc;
-    padding: 0px -2px;
-    position: relative;
-    z-index: 1;
-    -webkit-app-region: drag;
-    border-radius: 0 0 10px 10px;
-    /* height:30px; */
-  }
-
-  #status-bar::before {
-    content: '';
-    position: absolute;
-    top: 0px; /* Adjust as needed */
+    border-top: 1px solid var(--input-border-color); /* Use variable */
+    padding: 0 5px; /* Add some horizontal padding */
+    position: fixed;
+    bottom: 0;
     left: 0;
     right: 0;
-    height: 150px; /* Adjust as needed */
-    box-shadow: 0 -10px 10px var(--status-shadow-color);
-    z-index: -1;
-  }
-  
-  #status-label {
-    font-size: 9px;
-    text-align: left;
-    flex-grow: 1;
-    color: var(--status-label-color);
+    z-index: 5000; /* High z-index */
+    -webkit-app-region: no-drag; /* Default to no-drag */
+    border-radius: 0 0 var(--border-radius) var(--border-radius); /* Rounded bottom corners */
+    transition: transform 0.3s ease-in-out; /* Smooth slide animation */
+    transform: translateY(24px); /* Start hidden by default */
   }
 
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 20px;
-    margin-left: 10px;
+  /* Status Bar Visibility Logic (slide up on hover) */
+  #status-bar:hover, 
+  body.show-status-bar #status-bar {
+    transform: translateY(0); /* Slide up to show */
   }
-  
-  .switch input { display: none; }
-  
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0;
-    right: 0; bottom: 0;
-    background-color: var(--toggle-bg-light);
-    transition: .4s;
-    border-radius: 20px;
-  }
-  
-  .slider:before {
-    position: absolute;
+
+  /* Hover detection zone to trigger status bar */
+  body::after {
     content: "";
-    height: 16px; width: 16px;
-    left: 2px; bottom: 2px; 
-    background-color: var(--toggle-bg-dark);
-    transition: .4s;
-    border-radius: 50%;
-  }
-  
-  input:checked + .slider {
-    background-color: var(--toggle-bg-dark);
-  }
-  
-  input:checked + .slider:before {
-    transform: translateX(20px);
-  }
-  
-  /* Settings Modal */
-  .modal {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    /* background-color: var(--modal-background-color); */
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .hidden { display: none; }
-  
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
-  .modal-content {
-    font-family:'Inter', sans-serif;
-
-    background-color: var(--modal-background-color);
-    color: var(--modal-text-color);
-
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 480px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px; /* Small hover area at bottom of window */
+    z-index: 4999;
+    cursor: default;
   }
 
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .modal-header h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-color-secondary);
-  }
-  
-  .close-button {
-    background: none;
-    border: none;
-    /* float: right; */
-    font-size: 20px;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.3s;
-    color: var(--text-color-secondary);
+  body::after:hover + #status-bar,
+  body::after:hover ~ #status-bar {
+    transform: translateY(0);
   }
 
-  .close-button:hover {
-    opacity: 1;
+  /* Explicitly set drag-region for the middle area only */
+  .drag-region {
+    -webkit-app-region: drag; /* Only this element is draggable */
+    flex-grow: 1;
+    height: 100%;
   }
 
-  .settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+  /* Ensure all buttons and interactive elements are not draggable */
+  .no-drag,
+  button,
+  .theme-toggle-wrapper,
+  .dropdown,
+  .subdropdown,
+  .color-level-btn,
+  .font-option,
+  .font-size-option,
+  .color-theme-option,
+  .settings-option,
+  .new-tab-option,
+  .tab-entry {
+    -webkit-app-region: no-drag !important; /* Force no-drag on all interactive elements */
   }
 
-  .settings-column h3 {
-    margin-top: 0;
-    margin-bottom: 12px;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--text-color-secondary, #000000);
-  }
-
-  .setting-item {
-    margin-bottom: 12px;
+  #left-buttons,
+  #right-buttons {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px; /* Spacing between buttons */
+    padding: 0 5px; /* Padding within button groups */
+    -webkit-app-region: no-drag !important; /* Ensure these are not draggable */
   }
 
-  .setting-item label {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-color-secondary);
-    flex: 1;
-    margin-right: 10px;
-    margin-bottom: 10px;
-}
-
-.setting-item select,
-.setting-item input[type="text"],
-.setting-item input[type="password"] {
-  width: 60%;
-  padding: 6px 8px;
-  border: 1px solid var(--input-border-color);
-  border-radius: 4px;
-  font-size: 8px;
-  background-color: orange;
-  /* background-color: var(--dropdown-bg); */
-  /* color: var(--input-text-color); */
-  color: var(--dropdown-text);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.setting-item select option {
-  /* background-color: var(--input-background-color);
-  color: var(--input-text-color); */
-  background-color: orange;
-  color: var(--dropdown-text);
-}
-
-.setting-item select:focus,
-.setting-item input[type="text"]:focus,
-.setting-item input[type="password"]:focus {
-  outline: none;
-  border-color: var(--focus-border-color, #0969da);
-  box-shadow: 0 0 0 2px var(--focus-shadow-color, rgba(9, 105, 218, 0.3));
-}
-.color-picker-wrapper {
-  display: flex;
-  align-items: center;
-  width: 60%;
-}
-
-.color-picker-wrapper input[type="color"] {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.color-preview {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
-  margin-left: 6px;
-  border: 1px solid var(--input-border-color);
-}
-
-  .settings-footer {
-    margin-top: 20px;
-    text-align: right;
-  }
-
-  .journal-prompt {
-    color: #888;
-    font-style: italic;
-    margin-bottom: 5px;
-    white-space: pre-wrap;
-  }
-
-  .journal-entry{
-    min-height: 1em;
-    white-space: pre-wrap;
-    color: #888;
-    font-style: italic;
-    margin-bottom: 5px;
-  }
-
-#save-settings {
-  background-color: var(--primary-color, #2ea44f);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-  
-#save-settings:hover {
-  background-color: var(--primary-color-hover, #2c974b);
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .setting-item select,
-  .setting-item input[type="text"],
-  .setting-item input[type="password"] {
-    background-color: var(--input-background-dark, #21262d) !important;
-    border-color: var(--border-color-dark, #30363d);
-  }
-
-  .color-preview {
-    border-color: var(--border-color-dark, #30363d);
-  }
-}
-
-#theme-toggle img, #settings-btn img, #minimize-btn img, #close-btn img {
-    width: 15px;
-    height: 15px;
-    border:none;
-    background: none;
-    z-index: 3;
-    -webkit-app-region: no-drag;
-    transition: filter 0.5s ease;
-  }
-
+  /* General Button Styling */
   button {
     background: none;
     border: none;
-    font-size: 9px;
     cursor: pointer;
-    padding: 0px 0px;
-    margin-left: 10px;
-    margin-right: 10px;
-    border-radius: 0%;
-    transition: filter 0.2s;
+    padding: 0;
+    margin: 0; /* Reset margin */
     color: var(--text-color);
-    z-index: 3;
+    -webkit-app-region: no-drag; /* Ensure buttons are clickable */
+    display: flex; /* Align icons properly */
+    align-items: center; /* Align icons properly */
+    justify-content: center; /* Align icons properly */
   }
 
-  /* Light Mode Icons */
-body:not(.dark-mode) #theme-toggle img,
-body:not(.dark-mode) #settings-btn img,
-body:not(.dark-mode) #minimize-btn img,
-body:not(.dark-mode) #close-btn img {
-  filter: invert(0)
-}
+  button img {
+      width: 14px;
+      height: 14px;
+      filter: var(--icon-filter);
+      transition: filter 0.2s ease;
+  }
 
-/* Dark Mode Icons */
-body.dark-mode #theme-toggle img,
-body.dark-mode #settings-btn img,
-body.dark-mode #minimize-btn img,
-body.dark-mode #close-btn img {
-  filter: invert(1);
-}
+  /* Specific Button Hover Effects (using filter) */
+  #new-tab-btn:hover img,
+  #settings-btn:hover img,
+  .theme-toggle-label:hover img,
+  #minimize-btn:hover img {
+      /* Sky blue hover for most buttons */
+      filter: brightness(0) saturate(100%) invert(55%) sepia(83%) saturate(1622%) hue-rotate(175deg) brightness(98%) contrast(89%);
+  }
+  
+  /* Keep original style for tabs dropdown */
+  #tabs-dropdown-btn:hover img {
+      filter: var(--icon-filter) brightness(1.5);
+  }
+  
+  /* Red hover for close button */
+  #close-btn:hover img {
+       /* Reddish hover */
+      filter: brightness(0) saturate(100%) invert(25%) sepia(80%) saturate(5000%) hue-rotate(350deg) brightness(90%) contrast(110%);
+  }
 
-  /* Hover Effects for buttons */
-#theme-toggle:hover img,
-#settings-btn:hover img,
-#minimize-btn:hover img {
-  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(118%) contrast(119%) !important;
-}
-#close-btn:hover img {
-  filter: brightness(0) saturate(100%) invert(15%) sepia(95%) saturate(6392%) hue-rotate(359deg) brightness(94%) contrast(112%) !important;
-}
 
-/* Update these styles */
-.theme-toggle-wrapper {
-    position: relative;
-    display: inline-block;
-    margin-left: 10px;
-    margin-right: 10px;
-}
+  /* Theme Toggle Specific Styles */
+  .theme-toggle-wrapper {
+      position: relative;
+      display: inline-block;
+  }
+  .theme-toggle-checkbox {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+  }
+  .theme-toggle-label {
+      cursor: pointer;
+      display: inline-block;
+      padding: 2px; /* Reduce padding */
+  }
+  .theme-toggle-label img {
+      width: 14px;  /* Match other button images */
+      height: 14px; /* Match other button images */
+  }
 
-.theme-toggle-checkbox {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
 
-.theme-toggle-label {
-    cursor: pointer;
-    display: inline-block;
-    background: none;
-    border: none;
-    padding: 0;
-    z-index: 3;
-    -webkit-app-region: no-drag;
-}
+  /* Dropdown General Styling */
+  .dropdown {
+      position: absolute;
+      bottom: 26px; /* Position above the status bar */
+      background-color: var(--dropdown-bg);
+      border: 1px solid var(--input-border-color);
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 10001 !important; /* Ensure dropdowns are on top */
+      min-width: 150px; /* Minimum width */
+      padding: 5px;
+      max-height: 250px; /* Limit height */
+      overflow-y: hidden; /* Disable scrolling */
+  }
+  .dropdown.hidden {
+      display: none !important;
+  }
 
-.theme-toggle-label img {
-    width: 15px;
-    height: 15px;
-    border: none;
-    background: none;
-    z-index: 3;
-    -webkit-app-region: no-drag;
-    transition: filter 0.5s ease;
-}
+  /* Positioning Specific Dropdowns */
+  #new-tab-dropdown { left: 5px; }
+  #tabs-dropdown { left: 40px; /* Adjust as needed */ }
+  #settings-dropdown { right: 40px; /* Adjust based on button positions */ }
 
-/* Update the hover effects */
-.theme-toggle-label:hover img {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(118%) contrast(119%) !important;
-}
+  /* Dropdown Items / Options - Consistent Text Formatting */
+  .new-tab-option,
+  .tab-entry,
+  .settings-option,
+  .font-option,
+  .font-size-option,
+  .color-theme-option {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      margin: 1px 0;
+      text-align: left;
+      color: var(--dropdown-text);
+      background-color: transparent;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      width: 100%; /* Make items fill width */
+      white-space: nowrap; /* Prevent wrapping */
+      font-size: 13px; /* Match the tab-name text size */
+      font-weight: normal; /* No bold text */
+  }
 
-/* Update dark mode filters */
-body:not(.dark-mode) .theme-toggle-label img {
-    filter: invert(0);
-}
+  /* Improved Settings Options Styling */
+  .settings-option {
+      position: relative;
+      font-size: 13px; /* Match the tab-name size */
+      display: flex;
+      flex-direction: column;
+  }
 
-body.dark-mode .theme-toggle-label img {
-    filter: invert(1);
-}
+  .settings-option-label {
+      display: block;
+      font-weight: normal; /* Not bold */
+      font-size: 13px;
+      margin-bottom: 2px;
+  }
+
+  .settings-option-value {
+      display: block;
+      font-size: 13px; /* Same as label */
+      opacity: 0.7;
+      font-weight: normal;
+  }
+
+  /* Ensure subdropdown items match tab dropdown text */
+  .font-option,
+  .font-size-option,
+  .color-theme-option {
+      font-size: 13px; /* Match tab entries for consistency */
+  }
+
+  .new-tab-option img {
+      width: 12px;
+      height: 12px;
+      margin-right: 8px;
+      filter: var(--icon-filter);
+  }
+
+  .new-tab-option:hover,
+  .tab-entry:hover,
+  .settings-option:hover,
+  .font-option:hover,
+  .font-size-option:hover,
+  .color-theme-option:hover {
+      background-color: rgba(128, 128, 128, 0.15); /* Hover feedback */
+  }
+
+  /* Tab Entry Specifics */
+  .tab-entry {
+      justify-content: space-between; /* Push delete button to the right */
+  }
+  .tab-name {
+      flex-grow: 1; /* Allow name to take space */
+      margin-right: 8px; /* Space before delete button */
+      overflow: hidden;
+      text-overflow: ellipsis; /* Add ... if name is too long */
+      font-size: 13px; /* This is the reference size */
+  }
+  .delete-tab-btn {
+      padding: 2px; /* Small padding */
+      opacity: 0.7;
+      transition: opacity 0.2s;
+  }
+  .delete-tab-btn:hover {
+      opacity: 1;
+  }
+  .delete-tab-btn img {
+      width: 10px;
+      height: 10px;
+  }
+
+
+  /* Settings Submenu */
+  .subdropdown {
+      position: absolute;
+      left: -5px; /* Position very close to the settings dropdown */
+      top: 0;
+      background-color: var(--dropdown-bg);
+      border: 1px solid var(--input-border-color);
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 10002; /* Above main dropdown */
+      min-width: 140px;
+      padding: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+  }
+
+  .subdropdown.hidden { display: none !important; }
+
+  /* Color Theme and Intensity Controls */
+  .color-theme-option {
+      display: flex;
+      align-items: center;
+  }
+
+  .color-theme-option::before {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 3px;
+      border: 1px solid var(--input-border-color);
+  }
+
+  /* Color sample previews */
+  .color-theme-option[data-theme="default"]::before { background-color: #f0f0f0; }
+  .color-theme-option[data-theme="warm"]::before { background-color: #FFE6E6; }
+  .color-theme-option[data-theme="cool"]::before { background-color: #CCF0FF; }
+  .color-theme-option[data-theme="nature"]::before { background-color: #C8E6C9; }
+  .color-theme-option[data-theme="sunset"]::before { background-color: #FFE0B2; }
+  .color-theme-option[data-theme="blue"]::before { background-color: #CCF0FF; }
+
+  body.dark-mode .color-theme-option[data-theme="default"]::before { background-color: #2e2e2e; }
+  body.dark-mode .color-theme-option[data-theme="warm"]::before { background-color: #4D1F1F; }
+  body.dark-mode .color-theme-option[data-theme="cool"]::before { background-color: #1F4D4D; }
+  body.dark-mode .color-theme-option[data-theme="nature"]::before { background-color: #2E7D32; }
+  body.dark-mode .color-theme-option[data-theme="sunset"]::before { background-color: #D84315; }
+  body.dark-mode .color-theme-option[data-theme="blue"]::before { background-color: #141928; }
+
+  .color-level-options {
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      margin-top: 5px;
+  }
+
+  .color-level-options span {
+      margin-right: 10px;
+      font-size: 13px;
+      opacity: 0.8;
+  }
+
+  .color-level-btn {
+      width: 24px;
+      height: 24px;
+      margin: 0 3px;
+      border-radius: 3px;
+      border: 1px solid var(--input-border-color);
+      background-color: transparent;
+  }
+
+  .color-level-btn:hover {
+      background-color: rgba(128, 128, 128, 0.1);
+  }
+
+  .color-level-btn.active {
+      border: 2px solid var(--text-color);
+  }
+  
+  /* Rainbow button for four-square mode */
+  .color-level-btn[data-level="-1"] {
+      background: linear-gradient(to right, 
+          #ff0000, #ff7f00, #ffff00, #00ff00, 
+          #0000ff, #4b0082, #9400d3);
+      opacity: 0.8;
+      display: none; /* Hidden by default, shown in four-square mode */
+  }
+  
+  .color-level-btn[data-level="-1"]:hover {
+      opacity: 1;
+  }
+  
+  /* Show rainbow button only in four-square mode */
+  body.four-square-mode .color-level-btn[data-level="-1"] {
+      display: block;
+  }
