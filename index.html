@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sticky Notes</title>
+  <title>GD-Notes</title>
 
   <meta
     http-equiv="Content-Security-Policy"
@@ -19,122 +19,132 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Open+Sans&family=Roboto&family=Space+Mono&family=Inconsolata&family=Fira+Mono&family=IBM+Plex+Mono&family=Source+Code+Pro&family=Anonymous+Pro&family=Ubuntu+Mono&display=swap" rel="stylesheet">
-
-  <!-- <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Open+Sans&family=Roboto&display=swap" rel="stylesheet"> -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Main Content Area -->
+  <!-- Main Content Area - using a div with text-box elements created by JS -->
   <div id="text-box-container"></div>
 
   <!-- Status Bar -->
   <div id="status-bar">
     <div id="left-buttons" class="no-drag">
-      <button id="new-tab-btn" type="button">
+      
+      <button id="new-tab-btn" type="button" title="Create New Note">
         <img src="assets/plus.png" alt="New Tab">
       </button>
-      <div id="new-tab-dropdown" class="dropdown">
-        <button class="new-tab-option" type="button" data-layout="single">
+
+      <div id="new-tab-dropdown" class="dropdown hidden">
+        <button class="new-tab-option" type="button" data-layout="single" title="New Single Note">
           <img src="assets/single.png" alt="Single Note Pad"> Single
         </button>
-        <button class="new-tab-option" type="button" data-layout="four-square">
+
+        <button class="new-tab-option" type="button" data-layout="four-square" title="New Four Square Note">
           <img src="assets/window.png" alt="Four Square"> Four Square
         </button>
       </div>
   
-      <button id="tabs-dropdown-btn" type="button">
+      <button id="tabs-dropdown-btn" type="button" title="Show Existing Notes">
         <img src="assets/up-arrow.png" alt="Tabs">
       </button>
-      <div id="tabs-dropdown" class="dropdown">
-        <!-- This will be populated dynamically -->
-        <div class="tab-entry">No tabs yet</div>
+      <div id="tabs-dropdown" class="dropdown hidden">
+        <div class="tab-entry">Loading tabs...</div>
       </div>
     </div>
 
-    <!-- This is the drag region that fills available space -->
-  <div id="drag-region" class="drag-region"></div>
+    <div id="drag-region" class="drag-region"></div>
 
-    <!-- <button id="theme-toggle">
-        <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
-    </button> -->
     <div id="right-buttons" class="no-drag">
-      <div class="theme-toggle-wrapper">
+      <div class="theme-toggle-wrapper" title="Toggle Light/Dark Mode">
         <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
         <label for="theme-toggle" class="theme-toggle-label">
             <img id="theme-icon" src="assets/dark-mode.png" alt="Theme Toggle">
         </label>
       </div>
-      <button id="settings-btn">
-          <img src="assets/settings.png" alt="Settings">
+      
+      <!-- Settings Dropdown Button -->
+      <button id="settings-btn" title="Settings">
+        <img src="assets/settings.png" alt="Settings">
       </button>
-      <button id="minimize-btn">
-          <img src="assets/minimize.png" alt="Minimize">
-      </button>
-      <button id="close-btn">
-          <img src="assets/close-button.png" alt="Close">
-      </button>
-    </div>
-  </div>
-  <!-- "designed by {Author's Name} from Flaticon -->
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="modal hidden">
-  <div class="modal-content">
-    <header class="modal-header">
-      <h2>Settings</h2>
-      <button id="close-settings" class="close-button" aria-label="Close">&times;</button>
-    </header>
-    <div class="settings-grid">
-      <div class="settings-column">
-        <h3>Appearance</h3>
-        <div class="setting-item">
-          <label for="font-select">Font</label>
-          <select id="font-select">
-            <option value="'Inter', sans-serif">Inter</option>
-            <option value="'Roboto', sans-serif">Roboto</option>
-            <option value="'Open Sans', sans-serif">Open Sans</option>
-            <option value="'Lato', sans-serif">Lato</option>
-            <option value="'Fira Code', monospace">Fira Code</option>
-            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-            <option value="'Space Mono', monospace">Space Mono</option>
-            <option value="'Inconsolata', monospace">Inconsolata</option>
-            <option value="'Fira Mono', monospace">Fira Mono</option>
-            <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
-            <option value="'Source Code Pro', monospace">Source Code Pro</option>
-            <option value="'Anonymous Pro', monospace">Anonymous Pro</option>
-            <option value="'Hack', monospace">Hack</option>
-            <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
-            <option value="'Fira Mono', monospace">Fira Mono</option>
-          </select>
-        </div>
-        <div class="setting-item">
-          <label for="font-size-select">Font Size</label>
-          <select id="font-size-select">
-            <option value="12px">12px</option>
-            <option value="14px">14px</option>
-            <option value="16px" selected>16px</option>
-            <option value="18px">18px</option>
-            <option value="20px">20px</option>
-          </select>
-        </div>
-        <div class="setting-item">
-          <label for="text-box-theme">Text Box Theme</label>
-          <select id="text-box-theme">
-            <option value="default">Default</option>
-            <option value="warm">Warm</option>
-            <option value="cool">Cool</option>
-            <option value="nature">Nature</option>
-            <option value="sunset">Sunset</option>
-            <option value="blue">Blue</option>
-          </select>
+
+      <!-- Settings Dropdown Menu -->
+      <div id="settings-dropdown" class="dropdown hidden">
+        <!-- Font Settings -->
+        <button id="font-button" class="settings-option" data-submenu="font-dropdown">
+          <div class="settings-option-label">Font</div>
+          <div class="settings-option-value">Open Sans</div>
+        </button>
+        
+        <!-- Font Size Settings -->
+        <button id="font-size-button" class="settings-option" data-submenu="font-size-dropdown">
+          <div class="settings-option-label">Font Size</div>
+          <div class="settings-option-value">16px</div>
+        </button>
+
+        <!-- Color Theme Settings -->
+        <button id="color-theme-button" class="settings-option" data-submenu="color-theme-dropdown">
+          <div class="settings-option-label">Color Theme</div>
+          <div class="settings-option-value">Default</div>
+        </button>
+
+        <!-- Color Intensity Settings -->
+        <button id="color-intensity-button" class="settings-option" data-submenu="color-intensity-dropdown">
+          <div class="settings-option-label">Color Intensity</div>
+          <div class="settings-option-value">Level 2</div>
+        </button>
+      </div>
+      
+      <!-- Font Dropdown Submenu -->
+      <div id="font-dropdown" class="subdropdown hidden">
+        <button class="font-option" data-font="'Inter', sans-serif">Inter</button>
+        <button class="font-option" data-font="'Roboto', sans-serif">Roboto</button>
+        <button class="font-option" data-font="'Open Sans', sans-serif">Open Sans</button>
+        <button class="font-option" data-font="'Lato', sans-serif">Lato</button>
+        <button class="font-option" data-font="'Fira Code', monospace">Fira Code</button>
+        <button class="font-option" data-font="'JetBrains Mono', monospace">JetBrains Mono</button>
+        <button class="font-option" data-font="'Space Mono', monospace">Space Mono</button>
+        <button class="font-option" data-font="'Inconsolata', monospace">Inconsolata</button>
+        <button class="font-option" data-font="'Source Code Pro', monospace">Source Code Pro</button>
+        <button class="font-option" data-font="'Ubuntu Mono', monospace">Ubuntu Mono</button>
+      </div>
+      
+      <!-- Font Size Dropdown Submenu -->
+      <div id="font-size-dropdown" class="subdropdown hidden">
+        <button class="font-size-option" data-size="12px">12px</button>
+        <button class="font-size-option" data-size="14px">14px</button>
+        <button class="font-size-option" data-size="16px">16px</button>
+        <button class="font-size-option" data-size="18px">18px</button>
+        <button class="font-size-option" data-size="20px">20px</button>
+      </div>
+      
+      <!-- Color Theme Dropdown Submenu -->
+      <div id="color-theme-dropdown" class="subdropdown hidden">
+        <button class="color-theme-option" data-theme="default">Default</button>
+        <button class="color-theme-option" data-theme="warm">Warm</button>
+        <button class="color-theme-option" data-theme="cool">Cool</button>
+        <button class="color-theme-option" data-theme="nature">Nature</button>
+        <button class="color-theme-option" data-theme="sunset">Sunset</button>
+        <button class="color-theme-option" data-theme="blue">Blue</button>
+      </div>
+      
+      <!-- Color Intensity Dropdown Submenu -->
+      <div id="color-intensity-dropdown" class="subdropdown hidden">
+        <div class="color-level-options">
+          <button class="color-level-btn" data-level="0">1</button>
+          <button class="color-level-btn active" data-level="1">2</button>
+          <button class="color-level-btn" data-level="2">3</button>
+          <button class="color-level-btn" data-level="3">4</button>
         </div>
       </div>
+      
+      <button id="minimize-btn" title="Minimize">
+        <img src="assets/minimize.png" alt="Minimize">
+      </button>
+      <button id="close-btn" title="Close">
+        <img src="assets/close-button.png" alt="Close">
+      </button>
     </div>
-    
-    <footer class="settings-footer">
-      <button id="save-settings">Save Changes</button>
-    </footer>
   </div>
-</div>
+  
   <script type="module" src="renderer.js"></script>
 </body>
 </html>
