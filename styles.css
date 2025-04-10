@@ -7,7 +7,7 @@
   --text-box-color: #000000;
   --toggle-bg-light: #ccc;
   --toggle-bg-dark: #2196F3;
-  --font-family: 'Helvetica Neue', sans-serif; /* Default */
+  --font-family: 'JetBrains Mono', monospace; /* Default */
   --font-size: 16px; /* Default */
   --status-label-color: #000000;
   --border-radius: 8px; /* Common border radius value */
@@ -75,7 +75,7 @@ body {
     color: var(--text-box-color);
     font-size: var(--font-size); /* Use variable */
     font-family: var(--font-family); /* Use variable */
-    border-radius: var(--border-radius) var(--border-radius) 0 0; /* Match container */
+    border-radius: var(--border-radius); /* Match container */
     box-shadow: none; /* Remove shadow */
     resize: none;
     box-sizing: border-box;
@@ -128,8 +128,7 @@ body {
     z-index: 5000; /* High z-index */
     -webkit-app-region: no-drag; /* Default to no-drag */
     border-radius: 0 0 var(--border-radius) var(--border-radius); /* Rounded bottom corners */
-    transition: transform 0.3s ease-in-out; /* Smooth slide animation */
-    transform: translateY(24px); /* Start hidden by default */
+   
   }
 
   /* Status Bar Visibility Logic (slide up on hover) */
@@ -231,6 +230,7 @@ body {
 
   /* Theme Toggle Specific Styles */
   .theme-toggle-wrapper {
+   
       position: relative;
       display: inline-block;
   }
@@ -247,6 +247,7 @@ body {
       padding: 2px; /* Reduce padding */
   }
   .theme-toggle-label img {
+    color: var(--text-color);
       width: 14px;  /* Match other button images */
       height: 14px; /* Match other button images */
   }
@@ -283,6 +284,7 @@ body {
   .font-size-option,
   .color-theme-option {
       display: flex;
+      justify-content: space-between;
       align-items: center;
       padding: 7px 10px;
       margin: 1px 0;
@@ -303,7 +305,9 @@ body {
       position: relative;
       font-size: 13px; /* Match the tab-name size */
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      gap: 20px;
+      justify-content: space-between;
   }
 
   .settings-option-label {
@@ -319,6 +323,11 @@ body {
       opacity: 0.7;
       font-weight: normal;
   }
+
+  .settings-option-wrapper {
+    position: relative;
+}
+
 
   /* Ensure subdropdown items match tab dropdown text */
   .font-option,
@@ -371,8 +380,9 @@ body {
   /* Settings Submenu */
   .subdropdown {
       position: absolute;
-      left: -5px; /* Position very close to the settings dropdown */
       top: 0;
+      right: 100%;
+      margin-right: 5px;
       background-color: var(--dropdown-bg);
       border: 1px solid var(--input-border-color);
       border-radius: 5px;
@@ -380,7 +390,7 @@ body {
       z-index: 10002; /* Above main dropdown */
       min-width: 140px;
       padding: 5px;
-      max-height: 200px;
+      max-height: none;
       overflow-y: auto;
   }
 
