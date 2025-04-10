@@ -1,0 +1,97 @@
+name: Build and Release Desktop App
+
+# Trigger this workflow on pushes (like merges) to the main branch
+on:
+  push:
+    branches:
+      - main # Or 'master', depending on your default branch name
+
+permissions:
+  contents: write # Allow workflow to write releases/tags
+
+jobs:
+  build_and_release:
+    # Use a matrix strategy to build on both Windows and macOS
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }} # Run on the OS specified in the matrix
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for release notes generation (optional but good)
+
+      - name: Setup Node.js # Adjust version if needed
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Or '20', '16', etc. - use the version your app requires
+          cache: 'npm' # Or 'yarn' if you use yarn
+
+      - name: Install Dependencies
+        run: npm ci # 'ci' is generally recommended for CI environments, uses package-lock.json
+        # Or: yarn install --frozen-lockfile
+
+      # ====================================================================
+      - name: Build Application
+        # Use the actual command that builds your app and creates installers/distributables
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            npm run build:win:nsis
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            npm run build:mac:dmg
+          else
+            echo "Unsupported OS for build"
+            exit 1
+          fi
+        shell: bash # Use bash for cross-platform consistency here
+
+      # ====================================================================
+      # Identify Build Artifacts (Adjust paths/patterns if needed)
+      # ====================================================================
+      - name: Get Windows Installer Path # Runs only on Windows runner
+        if: runner.os == 'Windows'
+        run: |
+          # Find the latest .exe installer in the dist directory
+          $installerPath = (Get-ChildItem -Path ./dist/*.exe | Sort-Object CreationTime -Descending | Select-Object -First 1).FullName
+          echo "INSTALLER_PATH=$installerPath" >> $env:GITHUB_ENV
+          $assetName = (Get-Item $installerPath).Name
+          echo "ASSET_NAME=$assetName" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Get macOS Installer Path # Runs only on macOS runner
+        if: runner.os == 'macOS'
+        run: |
+          # Find the latest .dmg installer in the dist directory
+          installerPath=$(ls -t ./dist/*.dmg | head -n 1)
+          echo "INSTALLER_PATH=${installerPath}" >> $GITHUB_ENV
+          assetName=$(basename "${installerPath}")
+          echo "ASSET_NAME=${assetName}" >> $GITHUB_ENV
+        shell: bash
+
+      # ====================================================================
+      # Create/Update GitHub Release and Upload Asset
+      # ====================================================================
+      - name: Upload Artifact to Release
+        uses: softprops/action-gh-release@v2 # Use v2 or latest stable
+        with:
+          # Use the commit SHA to generate a unique tag for this specific build
+          # Or you could use a version from package.json, e.g., v$(node -p "require('./package.json').version")
+          # Using 'latest' tag means overwriting; commit SHA is safer for history
+          tag_name: latest # Use 'latest' to always update the same release targeted by your website API call
+          # Or use a dynamic tag: tag_name: build-${{ github.sha }}
+
+          name: Latest Build # Release name
+          body: | # Optional release notes
+            Automatic build triggered by commit ${{ github.sha }}.
+            OS: ${{ matrix.os }}
+          draft: false
+          prerelease: false
+          # This uploads the file identified in the previous step
+          files: ${{ env.INSTALLER_PATH }}
+          # Optional: Rename the asset during upload if needed
+          # asset_name: ${{ env.ASSET_NAME }} # Seems softprops uses file name by default
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use the default token
