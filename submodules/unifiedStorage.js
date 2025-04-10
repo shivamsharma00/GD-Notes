@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 const writeFileAtomic = require('write-file-atomic'); // Use atomic writes
 
-const APP_NAME = 'Parmesan'; // Or 'SmartStickyNotes'
+const APP_NAME = 'GD-Notes'; // Or 'SmartStickyNotes'
 const SETTINGS_DIR = 'settings';
 const DATA_FILE = 'appData.json';
 
@@ -15,7 +15,7 @@ let dataCache = null; // In-memory cache of the data file
 function getDefaultData() {
     const now = new Date().toISOString();
     return {
-        appVersion: "1.0.1", // Updated version
+        appVersion: "1.0.0", // Updated version
         globalSettings: {
             defaultFontFamily: "'Open Sans', sans-serif",
             defaultFontSize: "16px",

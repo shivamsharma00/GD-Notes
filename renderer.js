@@ -33,6 +33,20 @@ window.onload = async () => {
             console.log('Renderer: Auto-save mechanism started');
         }
 
+        // --- Setup Listeners for Broadcasts ---
+        window.electronAPI.onTabNameUpdated((tabId, newName) => {
+            console.log(`Renderer: Received broadcast: tab name update for ${tabId} to "${newName}"`);
+            UI.updateTabsDropdownName(tabId, newName);
+            // Also update preview cache if necessary, or just rely on next fetch in initTabs
+        });
+
+        window.electronAPI.onTabDeleted((tabId) => {
+            console.log(`Renderer: Received broadcast: tab deleted ${tabId}`);
+            UI.removeTabFromDropdown(tabId);
+            // Also update preview cache if necessary
+        });
+        // --- End Broadcast Listeners ---
+
         console.log('Renderer: Static UI initialized and listeners attached. Waiting for init-new-tab...');
 
     } catch (error) {
