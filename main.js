@@ -172,46 +172,60 @@ async function createNewDefaultTabWindow() {
 
 app.whenReady().then(async () => {
     try {
-        const storageData = await UnifiedStorage.initializeStorage();
-        console.log("Unified storage initialized.");
+        // Initialize storage and check if it's the first launch ever
+        const { data: storageData, isFirstLaunchEver } = await UnifiedStorage.initializeStorage();
+        console.log(`Unified storage initialized. Is first launch ever? ${isFirstLaunchEver}`);
 
-        // Check if *any* tabs exist. If not, create one default tab/window.
-        if (!storageData || !storageData.tabs || storageData.tabs.length === 0) {
-            console.log("No existing tabs found. Creating a default new tab.");
+        if (isFirstLaunchEver) {
+            console.log("First launch detected. Performing setup...");
+            // Create the first default note window
             await createNewDefaultTabWindow();
+            console.log("Default note window created.");
+
+            // IMPORTANT: Mark first launch as complete in storage
+            await UnifiedStorage.updateGlobalSettings({ firstLaunchEver: false });
+            console.log("Updated firstLaunchEver flag to false.");
+
         } else {
-            console.log(`${storageData.tabs.length} tabs found in storage. App ready.`);
+            // Not the first launch, proceed with normal window opening logic
+            console.log("Existing installation detected. Opening windows...");
             
-            // Always open a window with either the last active tab or a new one
-            let tabToOpen;
-            
-            // Try to find a tab that was previously open
-            const lastActiveTab = storageData.tabs.find(tab => tab.window?.state === 'open');
-            
-            if (lastActiveTab) {
-                console.log(`Found previously active tab: ${lastActiveTab.id}`);
-                tabToOpen = lastActiveTab;
+            // Check if *any* tabs exist. If not (e.g., user deleted all), create one default tab/window.
+            if (!storageData || !storageData.tabs || storageData.tabs.length === 0) {
+                console.log("No existing tabs found. Creating a default new tab.");
+                await createNewDefaultTabWindow();
             } else {
-                // Default to first tab if none were open
-                console.log(`No active tabs found. Opening first tab: ${storageData.tabs[0].id}`);
-                tabToOpen = storageData.tabs[0];
+                console.log(`${storageData.tabs.length} tabs found in storage. App ready.`);
+
+                // Try to find a tab that was previously open
+                const lastActiveTab = storageData.tabs.find(tab => tab.window?.state === 'open');
+
+                if (lastActiveTab) {
+                    console.log(`Found previously active tab: ${lastActiveTab.id}`);
+                    await createWindowForTab(lastActiveTab);
+                } else {
+                    // Default to first tab if none were marked as open
+                    console.log(`No active tabs found. Opening first available tab: ${storageData.tabs[0].id}`);
+                    await createWindowForTab(storageData.tabs[0]);
+                }
             }
-            
-            console.log(`Opening window for tab: ${lastActiveTab.id}`);
-            await createWindowForTab(lastActiveTab);
-            console.log(`Opening window for tab: ${tabToOpen.id}`);
-            await createWindowForTab(tabToOpen);
         }
 
     } catch (error) {
         console.error("Error during app initialization:", error);
-        // Create a default window anyway if there's an error
-        console.log("Creating default window due to error");
-        await createNewDefaultTabWindow();
+        // Basic fallback: Create a default window if initialization fails catastrophically
+        try {
+             console.warn("Creating default window due to initialization error.");
+             await createNewDefaultTabWindow();
+             // Attempt to mark first launch as done even on error path, might fail
+             await UnifiedStorage.updateGlobalSettings({ firstLaunchEver: false }).catch(e => console.error("Failed to update firstLaunch flag during error fallback:", e));
+        } catch (fallbackError) {
+             console.error("Failed to create even the default window during error handling:", fallbackError);
+             // Consider showing an Electron error dialog here
+             // dialog.showErrorBox('Fatal Error', 'Could not initialize the application.');
+             app.quit(); // Exit if we can't even show a basic window
+        }
     }
-
-    // ... rest of the code remains the same
-});
 
     // macOS: Recreate a window if dock icon is clicked and no windows are open.
     app.on('activate', () => {
@@ -222,6 +236,7 @@ app.whenReady().then(async () => {
                 createNewDefaultTabWindow();
         }
     });
+});
 
 app.on('before-quit', () => {
     app.isQuitting = true;
