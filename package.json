@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "build:mac:mas": "electron-builder --mac mas --publish never",
-    "build:mac:local": "electron-builder --mac dmg --publish never"
+    "build:mac:dmg": "electron-builder --mac dmg --publish never",
+    "build:win:nsis": "electron-builder --win nsis --publish never"
   },
   "build": {
     "appId": "com.galeetch.GD-Notes",
@@ -24,7 +25,7 @@
     "win": {
       "icon": "build/icons/icon.ico",
       "target": [
-        "portable"
+        "nsis"
       ]
     },
     "mas": {

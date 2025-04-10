@@ -22,7 +22,8 @@ function getDefaultData() {
             theme: "light", // 'light' or 'dark'
             defaultColorTheme: "default", // Default color theme
             defaultColorLevel: 1, // Default intensity level (0-3)
-            lastOpened: now
+            lastOpened: now,
+            firstLaunchEver: true // Set to true when creating default data
         },
         tabs: [
              // Optionally include one default tab structure here if needed elsewhere
@@ -106,7 +107,9 @@ function normalizeTabData(tabData) {
 }
 
 async function initializeStorage() {
-    if (dataCache) return dataCache; // Return cache if already loaded
+    if (dataCache) return { data: dataCache, isFirstLaunchEver: dataCache.globalSettings?.firstLaunchEver === true }; // Return cache if already loaded
+
+    let isFirstLaunchEver = false; // Default to false
 
     try {
         const homeDir = os.homedir();
@@ -121,51 +124,84 @@ async function initializeStorage() {
             const dataStr = await fs.readFile(unifiedFilePath, 'utf8');
             dataCache = JSON.parse(dataStr);
             console.log("Storage file loaded.");
-            // Simple migration/check: ensure essential keys exist
-             if (!dataCache.globalSettings) dataCache.globalSettings = getDefaultData().globalSettings;
-             if (!dataCache.tabs) dataCache.tabs = [];
-             if (!dataCache.journals) dataCache.journals = [];
-             
-             // Ensure color theme settings exist in global settings
-             if (dataCache.globalSettings && !dataCache.globalSettings.defaultColorTheme) {
+
+            // --- Migration & Checks ---
+            let settingsModified = false; // Flag to check if we need to write back changes
+
+            // Ensure essential keys exist
+            if (!dataCache.globalSettings) {
+                dataCache.globalSettings = getDefaultData().globalSettings;
+                // Since globalSettings didn't exist, treat as first launch for flag logic
+                 dataCache.globalSettings.firstLaunchEver = true;
+                 settingsModified = true;
+            }
+            if (!dataCache.tabs) { dataCache.tabs = []; settingsModified = true; }
+            if (!dataCache.journals) { dataCache.journals = []; settingsModified = true; }
+
+            // Check/Add firstLaunchEver flag
+            if (typeof dataCache.globalSettings.firstLaunchEver !== 'boolean') {
+                // If the flag doesn't exist (older version), set it to false
+                dataCache.globalSettings.firstLaunchEver = false;
+                settingsModified = true;
+                console.log("Added 'firstLaunchEver: false' to existing settings.");
+            }
+            // Record the first launch status *before* potentially changing it
+            isFirstLaunchEver = dataCache.globalSettings.firstLaunchEver === true;
+
+            // Ensure color theme settings exist in global settings
+            if (dataCache.globalSettings && !dataCache.globalSettings.defaultColorTheme) {
                  dataCache.globalSettings.defaultColorTheme = "default";
-             }
-             if (dataCache.globalSettings && dataCache.globalSettings.defaultColorLevel === undefined) {
+                 settingsModified = true;
+            }
+            if (dataCache.globalSettings && dataCache.globalSettings.defaultColorLevel === undefined) {
                  dataCache.globalSettings.defaultColorLevel = 1;
-             }
-             
-             // Migrate any tabs that don't have color settings yet
-             dataCache.tabs.forEach(tab => {
+                 settingsModified = true;
+            }
+
+            // Migrate any tabs that don't have color settings yet
+            let tabsModified = false;
+            dataCache.tabs.forEach(tab => {
                  if (tab.appearance) {
+                     let tabAppModified = false;
                      if (!tab.appearance.colorTheme) {
                          tab.appearance.colorTheme = "default";
+                         tabAppModified = true;
                      }
                      if (tab.appearance.colorLevel === undefined) {
                          tab.appearance.colorLevel = 1;
+                         tabAppModified = true;
                      }
+                     if (tabAppModified) tabsModified = true;
                  }
-             });
+            });
+
+             // Write data back only if modifications occurred during migration/checks
+             if (settingsModified || tabsModified) {
+                 console.log("Writing migrated/updated settings back to storage.");
+                 await writeData(dataCache); // Use writeData to update cache as well
+             }
 
         } catch (err) { // File doesn't exist or is invalid JSON
              if (err.code === 'ENOENT') {
                  console.log("Storage file not found. Creating default data.");
-                 dataCache = getDefaultData();
+                 dataCache = getDefaultData(); // This includes firstLaunchEver: true
+                 isFirstLaunchEver = true; // It's the first launch
                  await writeData(dataCache); // Write the default data
              } else {
                  console.error("Error reading or parsing storage file:", err);
-                 // Handle corrupted file? Maybe load default or backup?
                  console.warn("Falling back to default data due to error.");
                  dataCache = getDefaultData();
+                 isFirstLaunchEver = true; // Treat as first launch on error fallback
                  // Optionally try to backup the corrupted file here
              }
         }
-        return dataCache;
+        // Return both the data and the first launch status
+        return { data: dataCache, isFirstLaunchEver: isFirstLaunchEver };
     } catch (error) {
         console.error('Critical error initializing storage:', error);
-        // If storage fails to init, the app might be unusable.
-        // Maybe show error dialog and quit?
         dataCache = getDefaultData(); // Ensure cache is at least default
-        throw error; // Re-throw for main process to potentially handle
+        // Re-throw for main process to potentially handle
+        throw error;
     }
 }
 
