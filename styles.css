@@ -1,6 +1,7 @@
 /* Variables */
 :root {
   --background-color: #ffffff;
+  --selection-color:rgba(128, 128, 128, 0.2);
   --text-color: #000000;
   --title-bar-color: #f0f0f0;
   --text-box-bg: #ffffff;
@@ -21,6 +22,7 @@
 
 /* Dark Mode Variables */
 body.dark-mode {
+  --selection-color:rgba(128, 128, 128, 0.2);
   --background-color: #121212;
   --text-color: #FFFFFF;
   --title-bar-color: #090f18;
@@ -266,6 +268,7 @@ body {
       padding: 5px;
       max-height: 250px; /* Limit height */
       overflow-y: hidden; /* Disable scrolling */
+      font-family: var(--font-family);
   }
   .dropdown.hidden {
       display: none !important;
@@ -298,6 +301,7 @@ body {
       white-space: nowrap; /* Prevent wrapping */
       font-size: 13px; /* Match the tab-name text size */
       font-weight: normal; /* No bold text */
+      font-family: var(--font-family);
   }
 
   /* Improved Settings Options Styling */
@@ -308,7 +312,12 @@ body {
       flex-direction: row;
       gap: 20px;
       justify-content: space-between;
+      font-family: var(--font-family);
   }
+
+  .settings-option.active {
+    background-color: rgba(128, 128, 128, 0.2);
+}
 
   .settings-option-label {
       display: block;
@@ -322,6 +331,7 @@ body {
       font-size: 13px; /* Same as label */
       opacity: 0.7;
       font-weight: normal;
+      font-family: var(--font-family);
   }
 
   .settings-option-wrapper {
@@ -333,7 +343,14 @@ body {
   .font-option,
   .font-size-option,
   .color-theme-option {
+    display: flex;
+    justify-content: space-between;
       font-size: 13px; /* Match tab entries for consistency */
+      font-family: var(--font-family);
+  }
+
+  .font-size-option{
+    justify-content: center;
   }
 
   .new-tab-option img {
@@ -380,8 +397,9 @@ body {
   /* Settings Submenu */
   .subdropdown {
       position: absolute;
-      top: 0;
-      right: 100%;
+      top: auto !important;
+      bottom: calc(100% + 3px) !important;
+      left: calc(100% - 410px) !important;
       margin-right: 5px;
       background-color: var(--dropdown-bg);
       border: 1px solid var(--input-border-color);
@@ -392,6 +410,7 @@ body {
       padding: 5px;
       max-height: none;
       overflow-y: auto;
+      font-family: var(--font-family);
   }
 
   .subdropdown.hidden { display: none !important; }
@@ -399,7 +418,9 @@ body {
   /* Color Theme and Intensity Controls */
   .color-theme-option {
       display: flex;
+      flex-direction: row-reverse;
       align-items: center;
+      font-family: var(--font-family);
   }
 
   .color-theme-option::before {

@@ -88,7 +88,7 @@ const initialize = () => {
 function applySettings(settings) {
     if (!settings) return;
     console.log("UI: Applying global settings", settings);
-    document.documentElement.style.setProperty('--font-family', settings.defaultFontFamily || "'Open Sans', sans-serif");
+    document.documentElement.style.setProperty('--font-family', settings.defaultFontFamily || "'JetBrains Mono', monospace");
     document.documentElement.style.setProperty('--font-size', settings.defaultFontSize || "16px");
 
     applyDarkMode(settings.theme === 'dark'); // Apply dark mode based on global setting
@@ -722,19 +722,21 @@ function setupEventListeners() {
         option.addEventListener('click', (e) => {
             e.stopPropagation();
             
-            // Hide all other subdropdowns first
+            // Hide all other subdropdowns and deactivate all settings options
             document.querySelectorAll('.subdropdown').forEach(dropdown => {
                 if (dropdown.id !== submenuId) {
                     dropdown.classList.add('hidden');
                 }
             });
+            document.querySelectorAll('.settings-option').forEach(opt => opt.classList.remove('active'));
             
             // Toggle this subdropdown
-            submenu.classList.toggle('hidden');
+            const isNowHidden = submenu.classList.toggle('hidden');
             
-            // Position the submenu properly
-            if (!submenu.classList.contains('hidden')) {
+            // If it's visible now, position and activate it
+            if (!isNowHidden) {
                 positionSubmenu(option, submenu);
+                option.classList.add('active');
             }
         });
     });
@@ -842,6 +844,9 @@ function setupEventListeners() {
                 fontButton.querySelector('.settings-option-value').textContent = fontName;
             }
             fontDropdown?.classList.add('hidden');
+            document.querySelectorAll('.settings-option.active').forEach(option => {
+                option.classList.remove('active');
+            });
         });
     });
 
@@ -872,6 +877,9 @@ function setupEventListeners() {
                 fontSizeButton.querySelector('.settings-option-value').textContent = fontSize;
             }
             fontSizeDropdown?.classList.add('hidden');
+            document.querySelectorAll('.settings-option.active').forEach(option => {
+                option.classList.remove('active');
+            });
         });
     });
 
@@ -895,6 +903,9 @@ function setupEventListeners() {
             
             // Hide dropdown
             colorThemeDropdown?.classList.add('hidden');
+            document.querySelectorAll('.settings-option.active').forEach(option => {
+                option.classList.remove('active');
+            });
         });
     });
     
@@ -951,6 +962,11 @@ function setupEventListeners() {
             // ...close all dropdowns and submenus
             document.querySelectorAll('.dropdown, .subdropdown').forEach(dropdown => {
                 dropdown.classList.add('hidden');
+            });
+ 
+            // Also remove active state from settings options
+            document.querySelectorAll('.settings-option.active').forEach(option => {
+                option.classList.remove('active');
             });
         }
     });
