@@ -474,3 +474,38 @@ body {
   body.four-square-mode .color-level-btn[data-level="-1"] {
       display: block;
   }
+
+  /* Note Preview Pop-up */
+  #note-preview-popup {
+    position: fixed; /* Use fixed positioning */
+    z-index: 10003; /* Above other dropdowns */
+    background-color: var(--text-box-bg); /* Use variable from target note */
+    color: var(--text-box-color); /* Use variable from target note */
+    border: 1px solid var(--input-border-color); /* Standard border */
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+    padding: 10px;
+    max-width: 350px; /* Limit width */
+    max-height: 250px; /* Limit height */
+    overflow: hidden; /* Hide overflow initially */
+    font-size: 13px; /* Slightly smaller than default */
+    line-height: 1.4;
+    pointer-events: auto; /* Allow interaction like scrolling if needed */
+    box-sizing: border-box;
+  }
+
+  /* Fade out effect at the bottom */
+  .fade-out-bottom {
+    position: relative; /* Needed for the pseudo-element */
+  }
+
+  .fade-out-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px; /* Height of the fade */
+    background: linear-gradient(to bottom, transparent, var(--text-box-bg));
+    pointer-events: none; /* Don't block clicks on text underneath */
+  }

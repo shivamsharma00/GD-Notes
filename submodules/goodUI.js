@@ -5,6 +5,8 @@
 let textBoxElements = []; // Holds references to the current div.text-box elements
 let currentTabInstanceData = null; // Holds the data for the tab displayed in this window
 let statusBarTimeout = null; // Timeout ID for status bar hiding
+let notePreviewElement = null; // Element for hover preview
+let previewTimeout = null; // Timeout for showing/hiding preview
 
 // --- DOM Element References ---
 let container, closeBtn, minimizeBtn, settingsBtn, settingsDropdown;
@@ -14,6 +16,10 @@ let newTabBtn, newTabDropdown, tabsDropdownBtn, tabsDropdown;
 
 // --- Constants ---
 const STATUS_BAR_FADE_DELAY = 1500; // milliseconds to wait before fading status bar out
+const NOTE_PREVIEW_DELAY = 400; // milliseconds delay before showing preview
+const MAX_PREVIEW_LINES = 10; // Max lines to show in preview
+const MAX_PREVIEW_CHARS = 300; // Max characters to show in preview
+const TAB_NAME_WORDS = 5; // Max words from content for tab name
 
 // Color theme definitions
 const COLOR_THEMES = {
@@ -283,13 +289,37 @@ function updateSettingsUI(globalSettings = {}, tabAppearance = {}) {
 
 // --- Tab & Content Management ---
 
+// Helper function to extract first few words
+function getFirstWords(text, count) {
+    if (!text) return "";
+    // Create a temporary element to parse HTML and get text content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = text; // Use innerHTML to handle HTML tags
+    const plainText = tempDiv.textContent || tempDiv.innerText || "";
+    return plainText.split(/\s+/).slice(0, count).join(" ");
+}
+
 // Populate the 'Existing Tabs' dropdown
-function initTabs(tabsArray) {
+async function initTabs(tabsArray) { // Make async to fetch tab data
     if (!tabsDropdown) {
         console.warn("UI: Tabs dropdown element not found.");
         return;
     }
     tabsDropdown.innerHTML = ''; // Clear existing entries
+
+    // Pre-fetch all tab data to avoid multiple IPC calls on hover
+    const allTabsData = {};
+    try {
+        const fetchedTabs = await window.electronAPI.getAllTabs(); // This might be redundant if tabsArray is already complete
+        fetchedTabs.forEach(tab => {
+            if(tab && tab.id) allTabsData[tab.id] = tab;
+        });
+        console.log(`UI: Pre-fetched data for ${Object.keys(allTabsData).length} tabs for preview.`);
+    } catch (err) {
+        console.error("UI: Error pre-fetching tab data for preview:", err);
+        // Proceed without previews if fetching fails
+    }
+
 
     if (!tabsArray || tabsArray.length === 0) {
         tabsDropdown.innerHTML = '<div class="tab-entry no-tabs">No saved notes</div>';
@@ -305,7 +335,8 @@ function initTabs(tabsArray) {
 
         // Tab Name Span (Click to Open)
         const nameSpan = document.createElement('span');
-        nameSpan.textContent = tab.name || `Note (${tab.id.substring(0, 6)})`; // Use name or partial ID
+        // Use updated name format from tab data directly
+        nameSpan.textContent = tab.name || `Note (${tab.id.substring(0, 6)})`;
         nameSpan.className = 'tab-name';
         nameSpan.title = `Open note: ${nameSpan.textContent}`;
         nameSpan.addEventListener('click', (e) => {
@@ -318,6 +349,23 @@ function initTabs(tabsArray) {
                 })
                 .catch(err => console.error(`UI: IPC Error opening tab ${tab.id}:`, err));
         });
+
+        // --- Note Preview Logic ---
+        nameSpan.addEventListener('mouseenter', (e) => {
+            clearTimeout(previewTimeout); // Clear any pending hide timeout
+            // If another preview is showing, hide it immediately
+            hideNotePreview(0);
+
+            previewTimeout = setTimeout(() => {
+                showNotePreview(e.currentTarget, tab.id, allTabsData[tab.id]);
+            }, NOTE_PREVIEW_DELAY);
+        });
+
+        nameSpan.addEventListener('mouseleave', () => {
+            clearTimeout(previewTimeout); // Clear pending show timeout
+            hideNotePreview(); // Hide with delay
+        });
+        // --- End Note Preview Logic ---
 
         // Delete Button
         const deleteBtn = document.createElement('button');
@@ -340,6 +388,12 @@ function initTabs(tabsArray) {
                              if (currentTabInstanceData && currentTabInstanceData.id === tab.id) {
                                  window.electronAPI.closeWindow();
                              }
+                             // Remove from cached data
+                             delete allTabsData[tab.id];
+                             // Re-initialize tabs if needed (or just remove entry)
+                             if (tabsDropdown.children.length === 0) {
+                                tabsDropdown.innerHTML = '<div class="tab-entry no-tabs">No saved notes</div>';
+                             }
                          } else {
                              console.error(`UI: Failed to remove tab ${tab.id} via IPC.`);
                              alert("Failed to delete the note."); // User feedback
@@ -352,10 +406,104 @@ function initTabs(tabsArray) {
              }
         });
 
+
         entry.appendChild(nameSpan);
         entry.appendChild(deleteBtn);
         tabsDropdown.appendChild(entry);
     });
+}
+
+// --- Note Preview Functions ---
+function showNotePreview(targetElement, tabId, tabData) {
+    hideNotePreview(0); // Ensure no previews are visible
+
+    if (!tabData || !tabData.notes || !tabData.notes[0]) {
+        console.warn(`UI: No data found for tab ${tabId} to show preview.`);
+        return;
+    }
+
+    notePreviewElement = document.createElement('div');
+    notePreviewElement.id = 'note-preview-popup';
+    notePreviewElement.className = 'note-preview fade-out-bottom'; // Add fade class
+
+    // Apply Appearance
+    const appearance = tabData.appearance || {};
+    const isDark = appearance.isDarkMode || document.body.classList.contains('dark-mode');
+    const themeName = appearance.colorTheme || 'default';
+    const level = appearance.colorLevel !== undefined ? appearance.colorLevel : 1;
+
+    // Determine background and text color based on theme/level/mode
+    let bgColor, textColor;
+    if (COLOR_THEMES[themeName]) {
+        const colors = isDark ? COLOR_THEMES[themeName].dark : COLOR_THEMES[themeName].light;
+        const colorIndex = Math.min(Math.max(0, level), 3); // Clamp level 0-3
+        bgColor = colors[colorIndex] || (isDark ? '#1e1e1e' : '#ffffff'); // Fallback color
+        textColor = (level > 1 || isDark) ? '#ffffff' : '#000000'; // Simple contrast logic, adjust if needed
+    } else {
+        bgColor = appearance.backgroundColor || (isDark ? '#1e1e1e' : '#ffffff');
+        textColor = appearance.textColor || (isDark ? '#ffffff' : '#000000');
+    }
+
+    notePreviewElement.style.fontFamily = appearance.fontFamily || 'var(--font-family)';
+    notePreviewElement.style.fontSize = appearance.fontSize || 'var(--font-size)';
+    notePreviewElement.style.backgroundColor = bgColor;
+    notePreviewElement.style.color = textColor;
+    notePreviewElement.style.borderColor = isDark ? '#555' : '#ccc'; // Border color based on mode
+
+
+    // Limit content length and lines
+    let content = tabData.notes[0].content || "";
+    if (content.length > MAX_PREVIEW_CHARS) {
+        content = content.substring(0, MAX_PREVIEW_CHARS) + "...";
+    }
+    // Simple line limiting (might not be perfect with complex HTML)
+    const lines = content.split(/<br.*?>/gi); // Split by <br> tags (case-insensitive)
+    if (lines.length > MAX_PREVIEW_LINES) {
+         content = lines.slice(0, MAX_PREVIEW_LINES).join('<br>') + "...";
+    }
+    notePreviewElement.innerHTML = content; // Use innerHTML as content is stored as HTML
+
+    // Positioning
+    const rect = targetElement.getBoundingClientRect();
+    document.body.appendChild(notePreviewElement); // Append first to calculate size
+
+    // Position to the right of the dropdown, aligned with the hovered element
+    const dropdownRect = tabsDropdown.getBoundingClientRect();
+    notePreviewElement.style.position = 'fixed'; // Use fixed to position relative to viewport
+    notePreviewElement.style.top = `${rect.top}px`; // Align top with the hovered item
+    notePreviewElement.style.left = `${dropdownRect.right + 10}px`; // 10px right of the dropdown
+
+    // Adjust if preview goes off-screen
+    const previewRect = notePreviewElement.getBoundingClientRect();
+    if (previewRect.right > window.innerWidth) {
+        notePreviewElement.style.left = `${dropdownRect.left - previewRect.width - 10}px`; // Position left of dropdown
+    }
+    if (previewRect.bottom > window.innerHeight) {
+        notePreviewElement.style.top = `${window.innerHeight - previewRect.height - 10}px`; // Move up
+    }
+     if (previewRect.left < 0) {
+         notePreviewElement.style.left = '10px'; // Ensure it's not off-screen left
+     }
+
+    // Keep preview visible if mouse enters it
+    notePreviewElement.addEventListener('mouseenter', () => {
+        clearTimeout(previewTimeout);
+    });
+    notePreviewElement.addEventListener('mouseleave', () => {
+        hideNotePreview();
+    });
+}
+
+function hideNotePreview(delay = 300) {
+    clearTimeout(previewTimeout);
+    if (notePreviewElement) {
+        previewTimeout = setTimeout(() => {
+            if (notePreviewElement) {
+                notePreviewElement.remove();
+                notePreviewElement = null;
+            }
+        }, delay);
+    }
 }
 
 // Create the editable div elements based on layout
@@ -400,7 +548,7 @@ function createTabElement(tabData) {
          
          // Colors will be applied by applyTabAppearance or applyColorTheme later
 
-        // Add input event listener for saving content
+        // --- Input Event Listener ---
         box.addEventListener('input', () => {
             if (!currentTabInstanceData || !currentTabInstanceData.notes) return;
 
@@ -416,6 +564,29 @@ function createTabElement(tabData) {
             currentTabInstanceData.notes[i].content = box.innerHTML;
             currentTabInstanceData.notes[i].metadata.lastModified = new Date().toISOString();
             currentTabInstanceData.metadata.modified = new Date().toISOString(); // Update tab modified time too
+
+            // --- Dynamic Tab Naming (only for the first box) ---
+            if (i === 0) {
+                const firstWords = getFirstWords(box.innerHTML, TAB_NAME_WORDS);
+                const originalName = currentTabInstanceData.name;
+                // Update name only if content exists
+                if (firstWords.trim()) {
+                    currentTabInstanceData.name = `${firstWords}`;
+                } else {
+                     // Revert to default name if content is cleared
+                     const defaultName = currentTabInstanceData.layout === 'single' ? 'Single Note' : 'Four Square';
+                     currentTabInstanceData.name = `${defaultName}`;
+                }
+                // If the name actually changed, report it to main
+                if (currentTabInstanceData.name !== originalName) {
+                    window.electronAPI.reportTabNameChange(currentTabInstanceData.id, currentTabInstanceData.name);
+                    // Update the name in the current window's dropdown immediately
+                    updateTabsDropdownName(currentTabInstanceData.id, currentTabInstanceData.name);
+                }
+                // Optionally update the title bar if we had one, or the tabs dropdown if it's open
+                 // updateTabsDropdownName(currentTabInstanceData.id, currentTabInstanceData.name); // Need this helper
+            }
+            // --- End Dynamic Tab Naming ---
 
             // Trigger debounced save
             debouncedSave();
@@ -840,6 +1011,33 @@ function setupStatusBarHover() {
     setupHoverZone();
 }
 
+// Helper to update a specific tab name in the dropdown
+function updateTabsDropdownName(tabId, newName) {
+    if (tabsDropdown) {
+        const entry = tabsDropdown.querySelector(`.tab-entry[data-tab-id="${tabId}"] .tab-name`);
+        if (entry) {
+            entry.textContent = newName;
+            entry.title = `Open note: ${newName}`;
+            console.log(`UI: Updated dropdown name for ${tabId} to "${newName}"`);
+        }
+    }
+    // Also update cached data if necessary (though it should be updated on next fetch)
+}
+
+// Helper to remove a tab entry from the dropdown
+function removeTabFromDropdown(tabId) {
+    if (tabsDropdown) {
+        const entry = tabsDropdown.querySelector(`.tab-entry[data-tab-id="${tabId}"]`);
+        if (entry) {
+            entry.remove();
+            console.log(`UI: Removed tab ${tabId} from dropdown.`);
+            if (tabsDropdown.children.length === 0) {
+                tabsDropdown.innerHTML = '<div class="tab-entry no-tabs">No saved notes</div>';
+            }
+        }
+        // Remove from cached data if needed (though handled in initTabs fetch)
+    }
+}
 
 // --- Exports ---
 export default {
@@ -851,5 +1049,8 @@ export default {
     createTabElement,
     setupEventListeners,
     setupStatusBarHover,
-    startAutoSave
+    startAutoSave,
+    // Expose update/remove functions for external calls (from IPC listeners)
+    updateTabsDropdownName,
+    removeTabFromDropdown
 };

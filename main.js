@@ -2,10 +2,23 @@
 
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const UnifiedStorage = require('./submodules/unifiedStorage.js'); // Use unified storage
+const UnifiedStorage = require('./submodules/unifiedStorage.js'); 
+// Use unified storage
 
 // Keep track of windows using tabId as the key
 const windowRegistry = new Map();
+
+// Helper function to broadcast a message to all windows except the sender (optional)
+function broadcastToAllWindows(channel, data, senderWebContentsId = null) {
+    windowRegistry.forEach((win, tabId) => {
+        if (win && !win.isDestroyed()) {
+            // Don't send back to the originator window if senderWebContentsId is provided
+            if (senderWebContentsId === null || win.webContents.id !== senderWebContentsId) {
+                win.webContents.send(channel, data);
+            }
+        }
+    });
+}
 
 // Create a new window or focus an existing one for a tab
 async function createWindowForTab(tabData) {
@@ -133,34 +146,31 @@ async function createWindowForTab(tabData) {
 // Create a brand new default tab and its window
 async function createNewDefaultTabWindow() {
     console.log("Creating new default tab window.");
-    const newTab = UnifiedStorage.getDefaultTabData().tabs[0]; // Get default tab structure
+    const newTab = UnifiedStorage.getDefaultData(); // Get default tab structure
     newTab.id = 'tab-' + Date.now(); // Ensure unique ID
-    newTab.name = 'New Note';
+    
+    // Set initial name with date
+    const now = new Date();
+    newTab.name = `New Note`;
+    
+    // Set default window size
+    newTab.window = {
+        ...newTab.window, // Keep potential defaults
+        width: 500, 
+        height: 600,
+        x: undefined, // Let OS decide initial position
+        y: undefined,
+        state: 'closed' // Start as closed
+    };
+    
     await UnifiedStorage.addOrUpdateTab(newTab); // Save the new default tab first
     return await createWindowForTab(newTab); // Then create its window
 }
 
+
 // --- App Lifecycle ---
 
 app.whenReady().then(async () => {
-    try {
-        const storageData = await UnifiedStorage.initializeStorage();
-        console.log("Unified storage initialized.");
-
-        // CRITICAL CHANGE: Do NOT automatically reopen any windows on startup.
-        // Simply ensure storage is loaded. User opens tabs via the dropdown.
-
-        // Check if *any* tabs exist. If not, create one default tab/window.
-        if (!storageData || !storageData.tabs || storageData.tabs.length === 0) {
-            console.log("No existing tabs found. Creating a default new tab.");
-            await createNewDefaultTabWindow();
-        } else {
-                console.log(`${storageData.tabs.length} tabs found in storage. App ready.`);
-
-                // ADDED: Always open a window with either the last active tab or a new one
-                const lastActiveTab = storageData.tabs.find(tab => tab.window?.state === 'open') || storageData.tabs[0];  // Default to first tab if none were open
-
-                app.whenReady().then(async () => {
     try {
         const storageData = await UnifiedStorage.initializeStorage();
         console.log("Unified storage initialized.");
@@ -203,28 +213,20 @@ app.whenReady().then(async () => {
     // ... rest of the code remains the same
 });
 
-        }
-
-    } catch (error) {
-        console.error("Error during app initialization:", error);
-        // Consider showing an error dialog to the user
-    }
-
     // macOS: Recreate a window if dock icon is clicked and no windows are open.
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0 && windowRegistry.size === 0) {
              // Decide whether to create a new default window or reopen the last *known* tab
              // For simplicity, let's create a new default one if none are open.
-             console.log("App activated with no windows open. Creating default window.");
-             createNewDefaultTabWindow();
+                console.log("App activated with no windows open. Creating default window.");
+                createNewDefaultTabWindow();
         }
     });
-});
 
 app.on('before-quit', () => {
     app.isQuitting = true;
      // Maybe save all window bounds one last time?
-     console.log("App is quitting.");
+    console.log("App is quitting.");
      // Add logic here if needed before all windows close
 });
 
@@ -251,22 +253,33 @@ ipcMain.on('minimize-window', (event) => {
     if (win) win.minimize();
 });
 
+// --- New IPC Listener for Name Changes ---
+ipcMain.on('report-tab-name-change', (event, { tabId, newName }) => {
+    console.log(`IPC: Received name change report for ${tabId} to "${newName}"`);
+    // Broadcast this change to all *other* windows
+    broadcastToAllWindows('tab-name-updated', { tabId, newName }, event.sender.id);
+});
+
 // Handle request to create a new tab/window from UI
 ipcMain.handle('create-new-tab-window', async (event, options) => {
     console.log("IPC: Received 'create-new-tab-window' with options:", options);
     const { layout, colorTheme, colorLevel } = options;
     const tabId = 'tab-' + Date.now();
     const defaultSettings = (await UnifiedStorage.getGlobalSettings()) || {}; // Need getGlobalSettings
+    
+    // Get date for initial name
+    const now = new Date();
+    const initialName = `${layout === 'single' ? 'Single Note' : 'Four Square'}`;
 
     // Create the basic tab data structure
     const newTabData = {
         id: tabId,
         layout: layout,
-        name: layout === 'single' ? 'Single Note' : 'Four Square',
+        name: initialName, // Use new initial name
         window: { // Default window state
             x: undefined, y: undefined, // Let Electron decide position initially
-            width: layout === 'four-square' ? 600 : 400,
-            height: layout === 'four-square' ? 600 : 400,
+            width: 500, // Use fixed default size
+            height: 600, // Use fixed default size
             isMaximized: false,
             state: 'closed' // It's closed until the window is created
         },
@@ -346,26 +359,44 @@ ipcMain.handle('add-or-update-tab', async (event, tabData) => {
             tabData.window = existing.window; // Preserve existing window state
         }
     }
-    return await UnifiedStorage.addOrUpdateTab(tabData);
+    const updatedTab = await UnifiedStorage.addOrUpdateTab(tabData);
+
+    // If the name might have changed due to user input, broadcast it
+    // (We could check if the name actually changed, but broadcasting is simpler)
+    // Only broadcast if the event originates from a renderer process (not internal calls)
+    if (event && event.sender) {
+        broadcastToAllWindows('tab-name-updated', { tabId: updatedTab.id, newName: updatedTab.name }, event.sender.id);
+    }
+
+    return updatedTab;
 });
 
 ipcMain.handle('remove-tab', async (event, tabId) => {
     // Close the window if it's open before removing the tab data
+    let closedWindow = false;
     if (windowRegistry.has(tabId)) {
         const win = windowRegistry.get(tabId);
         if (win && !win.isDestroyed()) {
             console.log(`Closing window for tab ${tabId} before removal.`);
+            closedWindow = true;
             win.close(); // This triggers the 'closed' event which should clean up the registry
         }
     }
-    // Wait a moment to allow the close event to process? Might not be necessary.
-    // await new Promise(resolve => setTimeout(resolve, 50));
+    // If we closed a window, wait a tiny bit for the 'closed' event to process
+    // Might still be racy, but better than nothing.
+    if (closedWindow) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
     const result = await UnifiedStorage.removeTab(tabId);
 
-     // If the last window was just closed by this removal, and it's macOS, do nothing special.
-     // If it's not macOS, the app will quit via 'window-all-closed'.
-     // If no windows were open *before* this removal, also do nothing.
+    if (result) {
+        console.log(`Broadcasting tab deletion for ${tabId}`);
+        // Broadcast deletion to all remaining windows
+        broadcastToAllWindows('tab-deleted', { tabId });
+    }
+
+    // ... (rest of the logic for app quitting remains the same) ...
 
     return result;
 });
