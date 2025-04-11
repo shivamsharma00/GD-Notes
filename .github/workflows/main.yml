@@ -38,36 +38,32 @@ jobs:
         # Use the actual command that builds your app and creates installers/distributables
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            npm run build:win:nsis
+            npm run build:win  # <-- Use generalized script
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            npm run build:mac:dmg
+            npm run build:mac  # <-- Use generalized script
           else
             echo "Unsupported OS for build"
             exit 1
-          fi
-        shell: bash # Use bash for cross-platform consistency here
 
       # ====================================================================
       # Identify Build Artifacts (Adjust paths/patterns if needed)
       # ====================================================================
-      - name: Get Windows Installer Path # Runs only on Windows runner
+      - name: Get Windows Artifact Paths # Runs only on Windows runner
         if: runner.os == 'Windows'
         run: |
-          # Find the latest .exe installer in the dist directory
-          $installerPath = (Get-ChildItem -Path ./dist/*.exe | Sort-Object CreationTime -Descending | Select-Object -First 1).FullName
-          echo "INSTALLER_PATH=$installerPath" >> $env:GITHUB_ENV
-          $assetName = (Get-Item $installerPath).Name
-          echo "ASSET_NAME=$assetName" >> $env:GITHUB_ENV
+          # Find all .exe files (installer and portable) in the dist directory
+          $artifactPaths = (Get-ChildItem -Path ./dist/*.exe | Select-Object -ExpandProperty FullName) -join ' '
+          echo "Found Windows artifacts: $artifactPaths"
+          echo "ARTIFACT_PATHS=$artifactPaths" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Get macOS Installer Path # Runs only on macOS runner
+      - name: Get macOS Artifact Paths # Runs only on macOS runner
         if: runner.os == 'macOS'
         run: |
-          # Find the latest .dmg installer in the dist directory
-          installerPath=$(ls -t ./dist/*.dmg | head -n 1)
-          echo "INSTALLER_PATH=${installerPath}" >> $GITHUB_ENV
-          assetName=$(basename "${installerPath}")
-          echo "ASSET_NAME=${assetName}" >> $GITHUB_ENV
+          # Find .dmg and .zip files in the dist directory
+          artifactPaths=$(find ./dist -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print | paste -sd ' ')
+          echo "Found macOS artifacts: ${artifactPaths}"
+          echo "ARTIFACT_PATHS=${artifactPaths}" >> $GITHUB_ENV
         shell: bash
 
       # ====================================================================
@@ -88,10 +84,10 @@ jobs:
             OS: ${{ matrix.os }}
           draft: false
           prerelease: false
-          # This uploads the file identified in the previous step
-          files: ${{ env.INSTALLER_PATH }}
-          # Optional: Rename the asset during upload if needed
-          # asset_name: ${{ env.ASSET_NAME }} # Seems softprops uses file name by default
+          # This uploads ALL the files identified in the previous step for the OS
+          files: ${{ env.ARTIFACT_PATHS }}
+          # Optional: Rename the asset during upload if needed (uploads multiple assets with original names)
+          # asset_name: ${{ env.ASSET_NAME }} # Remove this line as we upload multiple assets
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use the default token
