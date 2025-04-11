@@ -50,6 +50,9 @@
       "output": "dist"
     }
   },
+  "overrides": {
+    "isexe": "2.0.0"
+  },
   "devDependencies": {
     "electron": "^32.1.2",
     "electron-builder": "^25.1.8",
@@ -194,7 +197,6 @@
     "is-unicode-supported": "^0.1.0",
     "isarray": "^1.0.0",
     "isbinaryfile": "^4.0.10",
-    "isexe": "^2.0.2",
     "jackspeak": "^3.4.3",
     "jake": "^10.9.2",
     "js-yaml": "^4.1.0",
@@ -293,9 +295,7 @@
     "stat-mode": "^1.0.0",
     "string_decoder": "^1.3.0",
     "string-width": "^4.2.3",
-    "string-width-cjs": "^4.2.3",
     "strip-ansi": "^6.0.1",
-    "strip-ansi-cjs": "^6.0.1",
     "sumchecker": "^3.0.1",
     "supports-color": "^7.2.0",
     "tar": "^6.2.1",
@@ -316,7 +316,6 @@
     "which": "^2.0.2",
     "wide-align": "^1.1.5",
     "wrap-ansi": "^7.0.0",
-    "wrap-ansi-cjs": "^7.0.0",
     "wrappy": "^1.0.2",
     "write-file-atomic": "^6.0.0",
     "xmlbuilder": "^15.1.1",
