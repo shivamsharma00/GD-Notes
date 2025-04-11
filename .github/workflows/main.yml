@@ -44,6 +44,8 @@ jobs:
           else
             echo "Unsupported OS for build"
             exit 1
+          fi
+        shell: bash
 
       # ====================================================================
       # Identify Build Artifacts (Adjust paths/patterns if needed)
