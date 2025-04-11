@@ -62,10 +62,23 @@ jobs:
       - name: Get macOS Artifact Paths # Runs only on macOS runner
         if: runner.os == 'macOS'
         run: |
-          # Find .dmg and .zip files in the dist directory
-          artifactPaths=$(find ./dist -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print | paste -sd ' ')
-          echo "Found macOS artifacts: ${artifactPaths}"
+          shopt -s nullglob # Make globs expand to nothing if no files match
+          dmg_files=(./dist/*.dmg)
+          zip_files=(./dist/*.zip)
+          all_files=("${dmg_files[@]}" "${zip_files[@]}")
+
+          if [ ${#all_files[@]} -eq 0 ]; then
+            echo "::warning::No .dmg or .zip files found in ./dist directory."
+            artifactPaths=""
+          else
+            # Join the array elements with spaces for the upload action
+            printf -v artifactPaths '%s ' "${all_files[@]}"
+            artifactPaths=${artifactPaths% } # Remove trailing space
+            echo "Found macOS artifacts: ${artifactPaths}"
+          fi
+          
           echo "ARTIFACT_PATHS=${artifactPaths}" >> $GITHUB_ENV
+          shopt -u nullglob # Disable nullglob again
         shell: bash
 
       # ====================================================================
