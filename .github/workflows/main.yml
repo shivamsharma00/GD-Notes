@@ -2,8 +2,8 @@ name: Build and Release Desktop App
 # Trigger this workflow on pushes (like merges) to the main branch
 on:
   push:
-    branches:
-      -main
+    branches: [main]
+    
 permissions: { contents: write}
 
 jobs:
