@@ -13,11 +13,15 @@
   --status-label-color: #000000;
   --border-radius: 8px; /* Common border radius value */
   --hover-blue: #3498db; /* Sky blue for button hover */
+  --caret-color: rgba(0, 0, 0, 0.7); /* Slightly softer caret for light mode */
 
   --dropdown-bg: #ffffff;
   --dropdown-text: #000000;
   --input-border-color: #d0d7de;
   --icon-filter: invert(0);
+  --toolbar-bg: #ffffff;
+  --toolbar-border: #cccccc;
+  --toolbar-button-hover-bg: #f0f0f0;
 }
 
 /* Dark Mode Variables */
@@ -31,11 +35,15 @@ body.dark-mode {
   --toggle-bg-light: #090f18;
   --toggle-bg-dark: #ccc;
   --status-label-color: #ffffff;
+  --caret-color: rgba(255, 255, 255, 0.7); /* Slightly softer caret for dark mode */
 
   --dropdown-bg: #2e2e2e;
   --dropdown-text: #ffffff;
   --input-border-color: #3e3e3e;
   --icon-filter: invert(1);
+  --toolbar-bg: #444444;
+  --toolbar-border: #666666;
+  --toolbar-button-hover-bg: #555555;
 }
 
 /* General Styles */
@@ -51,6 +59,7 @@ body {
     display: flex;
     flex-direction: column;
     border-radius: var(--border-radius); /* Curved edges for the whole window */
+    position: relative; /* Needed for absolute positioning of status bar relative to body */
 }
 
   *, *:before, *:after {
@@ -58,8 +67,7 @@ body {
   }
 
   /* Container for the editable divs */
-  #text-box-container {
-    position: relative; /* Needed for potential absolute positioning of children? */
+  #editor-container {
     flex: 1; /* Take up remaining space */
     overflow: hidden; /* Hide overflow */
     display: flex; /* Default to flex for single layout */
@@ -67,52 +75,129 @@ body {
     margin-bottom: 1px; /* Space before status bar */
     border-radius: var(--border-radius) var(--border-radius) 0 0; /* Curved top edges */
     background-color: transparent; /* Make container transparent */
+    padding-bottom: 25px; /* Space for the status bar (height + border) */
+    box-sizing: border-box; /* Include padding in height calculation */
   }
 
-  /* Styling for individual editable boxes */
-  .text-box {
+  /* Styling for individual editable areas */
+  .note-content-area {
     border: 0px solid transparent; /* Transparent border */
     padding: 10px;
-    background-color: var(--text-box-bg);
-    color: var(--text-box-color);
-    font-size: var(--font-size); /* Use variable */
-    font-family: var(--font-family); /* Use variable */
+    background-color: var(--text-box-bg); /* Use variable */
+    color: var(--text-box-color);       /* Use variable */
+    font-size: var(--font-size);        /* Use variable */
+    font-family: var(--font-family);    /* Use variable */
     border-radius: var(--border-radius); /* Match container */
     box-shadow: none; /* Remove shadow */
     resize: none;
     box-sizing: border-box;
-    overflow-y: auto; /* Enable scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Disable horizontal scrolling */
     height: 100%; /* Fill height */
     width: 100%; /* Fill width */
     -webkit-app-region: no-drag; /* Allow clicking/editing */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox - hide scrollbar */
+    -ms-overflow-style: none; /* IE/Edge - hide scrollbar */
+    word-wrap: break-word; /* Ensure text wraps instead of overflowing */
+    white-space: pre-wrap; /* Preserve line breaks but wrap text */
+    /* --- Typing UX Improvements --- */
+    line-height: 1.25; /* Reduced line height for consistency */
+    letter-spacing: 0.01em; /* Adjusted slightly */
+    scroll-margin-block: 20vh; /* Smooth caret scrolling */
+    caret-color: var(--caret-color); /* Theme-aware caret color */
   }
 
-  .text-box::-webkit-scrollbar { /* Chrome/Safari/Opera */
-    display: none;
+  .note-content-area::-webkit-scrollbar { /* Chrome/Safari/Opera */
+    display: none; /* Hide scrollbar */
   }
 
-  .text-box:focus {
+  .note-content-area:focus {
     outline: none; /* Remove focus outline */
   }
 
+  .note-content-area ul.arrow {
+    list-style-type: none;
+    padding-left: 25px;
+  }
+
+  .note-content-area ul.arrow li::before {
+    content: '→';
+    display: inline-block;
+    width: 1em;
+    margin-left: -1.3em;
+    margin-right: 0.3em;
+    color: var(--text-box-color);
+  }
+
+  /* Set caret color based on text color */
+  .note-content-area li.limit-exceeded {
+    outline: 1px dashed rgba(255,0, 0, 0.5);
+    outline-offset: 2px;
+      /* caret-color: var(--text-box-color); */
+  }
+
   /* Layout Specific Styles for the Container */
-  #text-box-container.single-layout {
+  #editor-container.single-layout {
     display: flex; /* Single item takes full space */
   }
-  #text-box-container.single-layout .text-box {
+  #editor-container.single-layout .note-content-area {
       flex: 1; /* Ensure it fills the container */
   }
 
-  #text-box-container.four-square-layout {
+  #editor-container.four-square-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
       gap: 1px;
   }
-  /* No specific styles needed for .text-box in four-square as grid handles sizing */
+  /* No specific styles needed for .note-content-area in four-square as grid handles sizing */
 
+  /* Floating Formatting Toolbar */
+  #formatting-toolbar {
+    position: absolute; /* Positioned relative to the document */
+    z-index: 10005; /* Above everything else */
+    background-color: var(--toolbar-bg);
+    border: 1px solid var(--toolbar-border);
+    border-radius: 6px;
+    padding: 3px 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    display: flex; /* Align buttons horizontally */
+    gap: 3px;
+    -webkit-app-region: no-drag; /* Ensure it's clickable */
+    transition: opacity 0.15s ease; /* Smooth fade */
+  }
+
+  #formatting-toolbar.hidden {
+    display: none;
+  }
+
+  #formatting-toolbar button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin: 0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color); /* For SVG currentColor */
+  }
+
+  #formatting-toolbar button svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+
+  #formatting-toolbar button:hover {
+    background-color: var(--toolbar-button-hover-bg);
+  }
+
+  /* Specific style for the color button */
+  #toolbar-color-btn {
+    position: relative;
+  }
 
   /* Status Bar */
   #status-bar {
@@ -161,6 +246,22 @@ body {
     -webkit-app-region: drag; /* Only this element is draggable */
     flex-grow: 1;
     height: 100%;
+    display: flex; /* Enable flex for centering save indicator */
+    justify-content: center; /* Center save indicator */
+    align-items: center; /* Center save indicator */
+  }
+
+  /* Save Indicator */
+  #save-indicator {
+      color: var(--status-label-color);
+      font-size: 11px;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      pointer-events: none; /* Don't block drag region */
+  }
+
+  #save-indicator.visible {
+      opacity: 0.7;
   }
 
   /* Ensure all buttons and interactive elements are not draggable */
@@ -289,7 +390,7 @@ body {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 7px 10px;
+      padding: 6px 9px; /* Slightly reduced padding */
       margin: 1px 0;
       text-align: left;
       color: var(--dropdown-text);
@@ -299,15 +400,16 @@ body {
       cursor: pointer;
       width: 100%; /* Make items fill width */
       white-space: nowrap; /* Prevent wrapping */
-      font-size: 13px; /* Match the tab-name text size */
+      font-size: 12px; /* Reduced size (was 13px) */
       font-weight: normal; /* No bold text */
       font-family: var(--font-family);
+      transition: background-color 0.1s ease; /* Add transition for hover */
   }
 
   /* Improved Settings Options Styling */
   .settings-option {
       position: relative;
-      font-size: 13px; /* Match the tab-name size */
+      font-size: 12px; /* Reduced size */
       display: flex;
       flex-direction: row;
       gap: 20px;
@@ -322,13 +424,13 @@ body {
   .settings-option-label {
       display: block;
       font-weight: normal; /* Not bold */
-      font-size: 13px;
+      font-size: 12px; /* Reduced size */
       margin-bottom: 2px;
   }
 
   .settings-option-value {
       display: block;
-      font-size: 13px; /* Same as label */
+      font-size: 12px; /* Reduced size */
       opacity: 0.7;
       font-weight: normal;
       font-family: var(--font-family);
@@ -343,10 +445,14 @@ body {
   .font-option,
   .font-size-option,
   .color-theme-option {
-    display: flex;
-    justify-content: space-between;
-      font-size: 13px; /* Match tab entries for consistency */
+      font-size: 12px; /* Reduced size */
       font-family: var(--font-family);
+  }
+
+  /* Specifically make font names smaller */
+  .font-option {
+      font-size: 11px; /* Small size for font names */
+      padding: 5px 9px; /* Adjust padding slightly */
   }
 
   .font-size-option{
@@ -363,10 +469,10 @@ body {
   .new-tab-option:hover,
   .tab-entry:hover,
   .settings-option:hover,
-  .font-option:hover,
+  .font-option:hover, /* More distinct hover for font options */
   .font-size-option:hover,
   .color-theme-option:hover {
-      background-color: rgba(128, 128, 128, 0.15); /* Hover feedback */
+      background-color: rgba(128, 128, 128, 0.2); /* Slightly darker hover */
   }
 
   /* Tab Entry Specifics */
@@ -378,7 +484,9 @@ body {
       margin-right: 8px; /* Space before delete button */
       overflow: hidden;
       text-overflow: ellipsis; /* Add ... if name is too long */
-      font-size: 13px; /* This is the reference size */
+      white-space: nowrap; /* Keep on single line */
+      max-width: 160px; /* Limit maximum width */
+      font-size: 12px; /* Reduced size */
   }
   .delete-tab-btn {
       padding: 2px; /* Small padding */
@@ -406,11 +514,35 @@ body {
       border-radius: 5px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       z-index: 10002; /* Above main dropdown */
-      min-width: 140px;
+      min-width: 160px; /* Kept width as requested */
       padding: 5px;
-      max-height: none;
-      overflow-y: auto;
+      max-height: 300px; /* Allow slightly more height for more fonts */
+      overflow-y: auto; /* Enable scrolling if needed */
       font-family: var(--font-family);
+  }
+
+  /* Make font dropdown specifically narrower */
+  #font-dropdown {
+      min-width: 150px; /* Narrower font dropdown */
+  }
+
+  /* New styles for dropdown headers and dividers */
+  .dropdown-header {
+    padding: 6px 9px 2px 9px; /* Adjusted padding */
+    font-size: 10px; /* Small size (using 10px instead of 5px) */
+    font-weight: bold;
+    color: var(--dropdown-text); /* Use dropdown text color */
+    opacity: 0.5; /* Make it greyish/faded */
+    text-transform: uppercase;
+    letter-spacing: 0.5px; /* Add some spacing */
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    margin: 3px 0; /* Reduced margin */
+    overflow: hidden;
+    background-color: rgba(128, 128, 128, 0.2); /* Grey divider */
+    border: none;
   }
 
   .subdropdown.hidden { display: none !important; }
@@ -457,7 +589,7 @@ body {
 
   .color-level-options span {
       margin-right: 10px;
-      font-size: 13px;
+      font-size: 12px; /* Reduced size */
       opacity: 0.8;
   }
 
@@ -509,7 +641,7 @@ body {
     max-width: 350px; /* Limit width */
     max-height: 250px; /* Limit height */
     overflow: hidden; /* Hide overflow initially */
-    font-size: 13px; /* Slightly smaller than default */
+    font-size: 12px; /* Reduced size (was 13px) */
     line-height: 1.4;
     pointer-events: auto; /* Allow interaction like scrolling if needed */
     box-sizing: border-box;
@@ -529,4 +661,138 @@ body {
     height: 40px; /* Height of the fade */
     background: linear-gradient(to bottom, transparent, var(--text-box-bg));
     pointer-events: none; /* Don't block clicks on text underneath */
+  }
+
+  /* --- List Styling --- */
+  .note-content-area ul,
+  .note-content-area ol {
+    padding-left: 25px; /* Indentation for the list */
+    margin-top: 6px;    /* Reduce vertical space before the list */
+    margin-bottom: 6px; /* Reduce vertical space after the list */
+  }
+
+  .note-content-area li {
+    padding-left: 5px;  /* Space between bullet/number and text */
+    margin-bottom: 2px; /* Reduce space between list items */
+    /* line-height: 1.3;  Reduce line height within the list item itself */ /* Removed for consistency */
+  }
+
+  /* Remove default margins from paragraphs inside list items */
+  .note-content-area li p {
+      margin: 0;
+      display: inline; /* Helps keep spacing tight */
+  }
+
+  /* Round bullet style (for * + space) */
+  .note-content-area ul.round {
+      list-style-type: disc; /* Default solid round */
+  }
+
+  /* Arrow bullet style (for - + space) */
+  .note-content-area ul.arrow {
+      list-style-type: none; /* Remove default */
+      padding-left: 20px; /* Slightly less padding */
+  }
+
+  .note-content-area ul.arrow li::before {
+      content: '→';
+      display: inline-block;
+      width: 1em;
+      margin-left: -1.3em;
+      margin-right: 0.3em;
+      color: var(--text-box-color);
+  }
+
+  /* Support for nested lists */
+  .note-content-area ul ul,
+  .note-content-area ol ol,
+  .note-content-area ul ol,
+  .note-content-area ol ul {
+      margin-top: 2px;
+      margin-bottom: 0; /* Reduce spacing for nested lists */
+  }
+
+  /* --- Checklist Styling --- */
+  .note-content-area .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      margin: 2px 0;
+      /* line-height: 1.3; */ /* Removed for consistency */
+      position: relative;
+      padding: 1px 0;
+  }
+
+  .note-content-area .checkbox {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-right: 6px;
+      flex-shrink: 0;
+      cursor: pointer;
+      user-select: none;
+      font-size: 14px; /* Slightly reduced checkbox symbol size */
+      color: var(--text-box-color);
+      position: relative;
+      border-radius: 2px;
+  }
+
+  .note-content-area .checkbox.unchecked {
+      opacity: 0.8;
+  }
+
+  .note-content-area .checkbox.unchecked:hover {
+      opacity: 1;
+      background-color: rgba(128, 128, 128, 0.1);
+  }
+
+  .note-content-area .checkbox.checked {
+      opacity: 1;
+  }
+
+  .note-content-area .checkbox.checked:hover {
+      opacity: 0.9;
+  }
+
+  .note-content-area .checklist-content {
+      flex-grow: 1;
+      min-height: 1.2em;
+      outline: none;
+      padding: 0 2px;
+  }
+
+  .note-content-area .checklist-content.checked {
+      text-decoration: line-through;
+      opacity: 0.65;
+  }
+
+  /* Ensure lists have the tightest spacing */
+  .note-content-area ul,
+  .note-content-area ol {
+    padding-left: 20px; /* Slightly reduce indentation */
+    margin-top: 4px;    /* Tighter vertical space before the list */
+    margin-bottom: 4px; /* Tighter vertical space after the list */
+  }
+
+  .note-content-area li {
+    padding-left: 3px;  /* Less space between bullet/number and text */
+    margin-bottom: 1px; /* Tightest space between list items */
+    /* line-height: 1.25;  Tighter line height within the list item itself */ /* Removed for consistency */
+  }
+
+  /* Selection Highlight */
+  ::selection {
+      background-color: var(--selection-color); /* Already soft */
+  }
+  .note-content-area::selection {
+      background-color: var(--selection-color);
+  }
+
+  /* Implicit Title Styling */
+  .note-content-area > .implicit-title {
+      font-size: calc(var(--font-size) + 2px);
+      font-weight: 600;
+      margin-bottom: 0.4em;
+      display: block; /* Ensure it takes its own line if needed */
   }
