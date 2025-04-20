@@ -22,8 +22,26 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Main Content Area - using a div with text-box elements created by JS -->
-  <div id="text-box-container"></div>
+  <!-- Main Content Area - Now holds contenteditable divs -->
+  <div id="editor-container">
+    <!-- Contenteditable divs will be created here by JS -->
+    <!-- Example for single layout: <div class="note-content-area" contenteditable="true"></div> -->
+    <!-- Example for four-square: 4 divs like above -->
+  </div>
+
+  <!-- Floating Formatting Toolbar (Initially Hidden) -->
+  <div id="formatting-toolbar" class="hidden">
+    <button data-command="bold" title="Bold (Ctrl+B)"><img src="assets/bold.png" alt="B"></button>
+    <button data-command="italic" title="Italic (Ctrl+I)"><img src="assets/italic.png" alt="I"></button>
+    <button data-command="underline" title="Underline (Ctrl+U)"><img src="assets/underline.png" alt="U"></button>
+    <button data-command="strikeThrough" title="Strikethrough"><img src="assets/strikethrough.png" alt="S"></button>
+    <button data-command="foreColor" id="toolbar-color-btn" title="Text Color"><img src="assets/font-color.png" alt="Color"></button>
+    <!-- Add other buttons if needed: Link, Bullets -->
+    <button data-command="insertUnorderedList" title="Bullet List"><img src="assets/bullet.png" alt="UL"></button>
+    <button data-command="insertOrderedList" title="Numbered List"><img src="assets/numbered.png" alt="OL"></button>
+    <button data-command="createChecklist" title="Checklist"><img src="assets/checkbox.png" alt="Check"></button>
+    <button data-command="createLink" title="Add Link"><img src="assets/link.png" alt="Link"></button>
+  </div>
 
   <!-- Status Bar -->
   <div id="status-bar">
@@ -51,7 +69,10 @@
       </div>
     </div>
 
-    <div id="drag-region" class="drag-region"></div>
+    <div id="drag-region" class="drag-region">
+        <!-- Save Indicator -->
+        <span id="save-indicator"> Saved 🦭...</span>
+    </div>
 
     <div id="right-buttons" class="no-drag">
       <div class="theme-toggle-wrapper" title="Toggle Light/Dark Mode">
@@ -95,18 +116,34 @@
       
       <!-- Font Dropdown Submenu -->
       <div id="font-dropdown" class="subdropdown hidden">
-        <button class="font-option" data-font="'Inter', sans-serif">Inter</button>
-        <button class="font-option" data-font="'Roboto', sans-serif">Roboto</button>
-        <button class="font-option" data-font="'Open Sans', sans-serif">Open Sans</button>
-        <button class="font-option" data-font="'Lato', sans-serif">Lato</button>
-        <button class="font-option" data-font="'Fira Code', monospace">Fira Code</button>
-        <button class="font-option" data-font="'JetBrains Mono', monospace">JetBrains Mono</button>
-        <button class="font-option" data-font="'Space Mono', monospace">Space Mono</button>
-        <button class="font-option" data-font="'Inconsolata', monospace">Inconsolata</button>
-        <button class="font-option" data-font="'Source Code Pro', monospace">Source Code Pro</button>
-        <button class="font-option" data-font="'Ubuntu Mono', monospace">Ubuntu Mono</button>
+        <div class="dropdown-header">Serif (Long-form)</div>
+        <button class="font-option" data-font="'Georgia', serif" style="font-family: 'Georgia', serif;">Georgia</button>
+        <button class="font-option" data-font="'Merriweather', serif" style="font-family: 'Merriweather', serif;">Merriweather</button>
+        <button class="font-option" data-font="'Times New Roman', serif" style="font-family: 'Times New Roman', serif;">Times New Roman</button>
+        <hr class="dropdown-divider">
+        <div class="dropdown-header">Sans-serif (UI & Notes)</div>
+        <button class="font-option" data-font="'Inter', sans-serif" style="font-family: 'Inter', sans-serif;">Inter</button>
+        <button class="font-option" data-font="'Roboto', sans-serif" style="font-family: 'Roboto', sans-serif;">Roboto</button>
+        <button class="font-option" data-font="'Open Sans', sans-serif" style="font-family: 'Open Sans', sans-serif;">Open Sans</button>
+        <button class="font-option" data-font="'Lato', sans-serif" style="font-family: 'Lato', sans-serif;">Lato</button>
+        <!-- Add system fonts like SF Pro (macOS), Segoe UI (Windows) if desired, though tricky to guarantee -->
+        <hr class="dropdown-divider">
+        <div class="dropdown-header">Monospace (Code & Tabular)</div>
+        <button class="font-option" data-font="'JetBrains Mono', monospace" style="font-family: 'JetBrains Mono', monospace;">JetBrains Mono</button>
+        <button class="font-option" data-font="'Fira Code', monospace" style="font-family: 'Fira Code', monospace;">Fira Code</button>
+        <button class="font-option" data-font="'Source Code Pro', monospace" style="font-family: 'Source Code Pro', monospace;">Source Code Pro</button>
+        <button class="font-option" data-font="'Ubuntu Mono', monospace" style="font-family: 'Ubuntu Mono', monospace;">Ubuntu Mono</button>
+        <button class="font-option" data-font="'Space Mono', monospace" style="font-family: 'Space Mono', monospace;">Space Mono</button>
+        <button class="font-option" data-font="'Inconsolata', monospace" style="font-family: 'Inconsolata', monospace;">Inconsolata</button>
+        <hr class="dropdown-divider">
+        <div class="dropdown-header">Handwriting (Casual)</div>
+        <button class="font-option" data-font="'Comic Neue', cursive" style="font-family: 'Comic Neue', cursive;">Comic Neue</button>
+        <button class="font-option" data-font="'Patrick Hand', cursive" style="font-family: 'Patrick Hand', cursive;">Patrick Hand</button>
+        <hr class="dropdown-divider">
+        <div class="dropdown-header">Display (Headlines - Optional)</div>
+        <button class="font-option" data-font="'Poppins', sans-serif" style="font-family: 'Poppins', sans-serif;">Poppins</button>
+        <button class="font-option" data-font="'Playfair Display', serif" style="font-family: 'Playfair Display', serif;">Playfair Display</button>
       </div>
-      
       <!-- Font Size Dropdown Submenu -->
       <div id="font-size-dropdown" class="subdropdown hidden">
         <button class="font-size-option" data-size="12px">12px</button>
