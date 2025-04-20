@@ -1,108 +1,66 @@
 name: Build and Release Desktop App
-
 # Trigger this workflow on pushes (like merges) to the main branch
 on:
   push:
     branches:
-      - main # Or 'master', depending on your default branch name
-
-permissions:
-  contents: write # Allow workflow to write releases/tags
+      -main
+permissions: { contents: write}
 
 jobs:
-  build_and_release:
-    # Use a matrix strategy to build on both Windows and macOS
-    strategy:
+  build: 
+    strategy: 
       matrix:
         os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }} # Run on the OS specified in the matrix
+    runs-on: ${{ matrix.os }}
+    
+    steps: 
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      
+      - uses: actions/setup-node@v4
+        with: { node-version: '18', cache: 'npm' }
+        
+      - name: Install deps
+        run: npm ci
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetch all history for release notes generation (optional but good)
-
-      - name: Setup Node.js # Adjust version if needed
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18' # Or '20', '16', etc. - use the version your app requires
-          cache: 'npm' # Or 'yarn' if you use yarn
-
-      - name: Install Dependencies
-        run: npm ci # 'ci' is generally recommended for CI environments, uses package-lock.json
-        # Or: yarn install --frozen-lockfile
-
-      # ====================================================================
-      - name: Build Application
-        # Use the actual command that builds your app and creates installers/distributables
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            npm run build:win  # <-- Use generalized script
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            npm run build:mac  # <-- Use generalized script
-          else
-            echo "Unsupported OS for build"
-            exit 1
-          fi
+      - name: Build
         shell: bash
-
-      # ====================================================================
-      # Identify Build Artifacts (Adjust paths/patterns if needed)
-      # ====================================================================
-      - name: Get Windows Artifact Paths # Runs only on Windows runner
-        if: runner.os == 'Windows'
         run: |
-          # Find all .exe files (installer and portable) in the dist directory
-          $artifactPaths = (Get-ChildItem -Path ./dist/*.exe | Select-Object -ExpandProperty FullName) -join ' '
-          echo "Found Windows artifacts: $artifactPaths"
-          echo "ARTIFACT_PATHS=$artifactPaths" >> $env:GITHUB_ENV
-        shell: pwsh
-
-      - name: Get macOS Artifact Paths # Runs only on macOS runner
-        if: runner.os == 'macOS'
-        run: |
-          shopt -s nullglob # Make globs expand to nothing if no files match
-          dmg_files=(./dist/*.dmg)
-          zip_files=(./dist/*.zip)
-          all_files=("${dmg_files[@]}" "${zip_files[@]}")
-
-          if [ ${#all_files[@]} -eq 0 ]; then
-            echo "::warning::No .dmg or .zip files found in ./dist directory."
-            artifactPaths=""
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            npm run build:win 
           else
-            # Join the array elements with spaces for the upload action
-            printf -v artifactPaths '%s ' "${all_files[@]}"
-            artifactPaths=${artifactPaths% } # Remove trailing space
-            echo "Found macOS artifacts: ${artifactPaths}"
+            npm run build:mac
           fi
-          
-          echo "ARTIFACT_PATHS=${artifactPaths}" >> $GITHUB_ENV
-          shopt -u nullglob # Disable nullglob again
-        shell: bash
-
-      # ====================================================================
-      # Create/Update GitHub Release and Upload Asset
-      # ====================================================================
-      - name: Upload Artifact to Release
-        uses: softprops/action-gh-release@v2 # Use v2 or latest stable
+      
+      - name: Upload build artifects
+        uses: actions/upload-artifact@v4
         with:
-          # Use the commit SHA to generate a unique tag for this specific build
-          # Or you could use a version from package.json, e.g., v$(node -p "require('./package.json').version")
-          # Using 'latest' tag means overwriting; commit SHA is safer for history
-          tag_name: latest # Use 'latest' to always update the same release targeted by your website API call
-          # Or use a dynamic tag: tag_name: build-${{ github.sha }}
-
-          name: Latest Build # Release name
-          body: | # Optional release notes
-            Automatic build triggered by commit ${{ github.sha }}.
-            OS: ${{ matrix.os }}
+          name: ${{ matrix.os }}-artifacts
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.exe
+  
+  release: 
+    needs: build
+    runs-on: ubuntu-lateset
+    steps: 
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with: { path: ./dist }
+      
+      - name: Create / update "latest" release
+        uses: softprops/action-gh-release@v2
+        with: 
+          tag_name: latest
+          name: Latest Build
           draft: false
           prerelease: false
-          # This uploads ALL the files identified in the previous step for the OS
-          files: ${{ env.ARTIFACT_PATHS }}
-          # Optional: Rename the asset during upload if needed (uploads multiple assets with original names)
-          # asset_name: ${{ env.ASSET_NAME }} # Remove this line as we upload multiple assets
-
+          files: |
+            dist/**/*.dmg
+            dist/**/*.zip
+            dist/**/*.exe
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Use the default token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        
