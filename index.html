@@ -75,6 +75,34 @@
     </div>
 
     <div id="right-buttons" class="no-drag">
+      <button id="help-btn" title="Help & Shortcuts">?
+      </button>
+      
+      <!-- Help Popup -->
+      <div id="help-popup" class="dropdown hidden">
+        <div class="help-section">
+            <div class="dropdown-header">Shortcuts</div>
+            <ul>
+              <li><b>Ctrl+B (B)</b>: Bold</li>
+              <li><b>Ctrl+I (I)</b>: Italic</li>
+              <li><b>Ctrl+U (U)</b>: Underline</li>
+              <li><b>*</b> + Space (*): Bullet List</li>
+              <li><b>'-' + '>'</b> + Space (->): Arrow List</li>
+              <li><b>'['+']'</b> + Space ([]): Checklist</li>
+              <li><b>-</b> + Space (-): Bold larger text</li>
+              <li><b>--</b> + Space (--): Title text</li>
+              <li><b>==</b> + Space (==): Subtitle text</li>
+            </ul>
+        </div>
+        <hr class="dropdown-divider">
+        <div class="help-section feedback-section">
+          <p>Your feedback helps us grow! Share your thoughts:</p>
+          <a href="https://x.com/gd_notes" target="_blank" title="Visit GD Notes on X">
+            <img src="assets/twitter.png" alt="X"> @gd_notes
+          </a>
+        </div>
+      </div>
+      
       <div class="theme-toggle-wrapper" title="Toggle Light/Dark Mode">
         <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
         <label for="theme-toggle" class="theme-toggle-label">
@@ -146,11 +174,27 @@
       </div>
       <!-- Font Size Dropdown Submenu -->
       <div id="font-size-dropdown" class="subdropdown hidden">
+        <button class="font-size-option" data-size="10px">10px</button>
+        <button class="font-size-option" data-size="11px">11px</button>
         <button class="font-size-option" data-size="12px">12px</button>
+        <button class="font-size-option" data-size="13px">13px</button>
         <button class="font-size-option" data-size="14px">14px</button>
+        <button class="font-size-option" data-size="15px">15px</button>
         <button class="font-size-option" data-size="16px">16px</button>
+        <button class="font-size-option" data-size="17px">17px</button>
         <button class="font-size-option" data-size="18px">18px</button>
+        <button class="font-size-option" data-size="19px">19px</button>
         <button class="font-size-option" data-size="20px">20px</button>
+        <button class="font-size-option" data-size="21px">21px</button>
+        <button class="font-size-option" data-size="22px">22px</button>
+        <button class="font-size-option" data-size="23px">23px</button>
+        <button class="font-size-option" data-size="24px">24px</button>
+        <button class="font-size-option" data-size="25px">25px</button>
+        <button class="font-size-option" data-size="26px">26px</button>
+        <button class="font-size-option" data-size="27px">27px</button>
+        <button class="font-size-option" data-size="28px">28px</button>
+        <button class="font-size-option" data-size="29px">29px</button>
+        <button class="font-size-option" data-size="30px">30px</button>
       </div>
       
       <!-- Color Theme Dropdown Submenu -->

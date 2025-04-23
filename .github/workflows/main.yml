@@ -32,22 +32,27 @@ jobs:
             npm run build:mac
           fi
       
-      - name: Upload build artifects
+      - name: Upload installer only
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-artifacts
+          name: ${{ matrix.os }}-installers
           path: |
             dist/*.dmg
-            dist/*.zip
-            dist/*.exe
+            dist/*Setup.exe
   
   release: 
     needs: build
-    runs-on: ubuntu-lateset
+    runs-on: ubuntu-latest
     steps: 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-        with: { path: ./dist }
+        with: { path: ./installers }
+
+      - name: Move installers to release directory
+        run: |
+          mkdir -p dist
+          find installers -type f \( -iname '*.dmg' -o -iname '*setup.exe' \) -exec cp {} dist/ \;
+  
       
       - name: Create / update "latest" release
         uses: softprops/action-gh-release@v2
@@ -56,9 +61,6 @@ jobs:
           name: Latest Build
           draft: false
           prerelease: false
-          files: |
-            dist/**/*.dmg
-            dist/**/*.zip
-            dist/**/*.exe
+          files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

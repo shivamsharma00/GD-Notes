@@ -1,12 +1,15 @@
 // renderer.js
 import UI from './submodules/goodUI.js'
 
+// document.addEventListener('DOMContentLoaded', () => {
+//     UI.initialize();
+//   });
 let currentTabData = null; // Store data for the current window instance
 
 window.onload = async () => {
     try {
         console.log('Renderer: Initializing window...');
-        UI.initialize(); // Get references to static elements
+        await UI.initialize(); // Get references to static elements
 
         // Load global settings first to apply base theme/fonts
         const globalSettings = await window.electronAPI.getGlobalSettings();
@@ -24,8 +27,8 @@ window.onload = async () => {
         }
 
         // Setup listeners for buttons, dropdowns etc. AFTER elements are initialized
-        UI.setupEventListeners();
-        UI.setupStatusBarHover(); // Setup hover effect for status bar
+        // UI.setupEventListeners();
+        // UI.setupStatusBarHover(); // Setup hover effect for status bar
         
         // Start auto-save functionality
         if (typeof UI.startAutoSave === 'function') {

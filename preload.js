@@ -21,6 +21,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // --- Reporting Changes to Main ---
   reportTabNameChange: (tabId, newName) => ipcRenderer.send('report-tab-name-change', { tabId, newName }),
+  
+  // Direct functions for UI
+  showSaveIndicator: () => {
+    // This is a dummy function that will be called from formatting.js
+    // The actual implementation is in goodUI.js
+  },
 
   // --- Event Listeners from Main ---
   onInitNewTab: (callback) => {
@@ -43,5 +49,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('tab-deleted', (event, { tabId }) => {
       callback(tabId);
     });
+  },
+  // Save indicator listener (dummy implementation)
+  onShowSaveIndicator: (callback) => {
+    // This is a dummy function - the actual show indicator call is done directly in goodUI.js
+    // This is here just to prevent the "not a function" error
   }
 });

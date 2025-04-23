@@ -107,6 +107,12 @@ body {
     caret-color: var(--caret-color); /* Theme-aware caret color */
   }
 
+  /* Make sure all elements inside note-content-area inherit font settings */
+  .note-content-area * {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
   .note-content-area::-webkit-scrollbar { /* Chrome/Safari/Opera */
     display: none; /* Hide scrollbar */
   }
@@ -213,37 +219,13 @@ body {
     left: 0;
     right: 0;
     z-index: 5000; /* High z-index */
-    -webkit-app-region: no-drag; /* Default to no-drag */
+    -webkit-app-region: drag; /* Make entire status bar draggable by default */
     border-radius: 0 0 var(--border-radius) var(--border-radius); /* Rounded bottom corners */
-   
-  }
-
-  /* Status Bar Visibility Logic (slide up on hover) */
-  #status-bar:hover, 
-  body.show-status-bar #status-bar {
-    transform: translateY(0); /* Slide up to show */
-  }
-
-  /* Hover detection zone to trigger status bar */
-  body::after {
-    content: "";
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 8px; /* Small hover area at bottom of window */
-    z-index: 4999;
-    cursor: default;
-  }
-
-  body::after:hover + #status-bar,
-  body::after:hover ~ #status-bar {
-    transform: translateY(0);
   }
 
   /* Explicitly set drag-region for the middle area only */
   .drag-region {
-    -webkit-app-region: drag; /* Only this element is draggable */
+    -webkit-app-region: drag; /* This element is draggable */
     flex-grow: 1;
     height: 100%;
     display: flex; /* Enable flex for centering save indicator */
@@ -253,15 +235,15 @@ body {
 
   /* Save Indicator */
   #save-indicator {
-      color: var(--status-label-color);
-      font-size: 11px;
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
-      pointer-events: none; /* Don't block drag region */
+    color: var(--status-label-color);
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none; /* Don't block drag region */
   }
 
   #save-indicator.visible {
-      opacity: 0.7;
+    opacity: 0.7;
   }
 
   /* Ensure all buttons and interactive elements are not draggable */
@@ -358,26 +340,50 @@ body {
 
   /* Dropdown General Styling */
   .dropdown {
-      position: absolute;
+      position: absolute; /* Changed from absolute to fixed */
+      z-index: 10001 !important;
       bottom: 26px; /* Position above the status bar */
       background-color: var(--dropdown-bg);
       border: 1px solid var(--input-border-color);
       border-radius: 5px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 10001 !important; /* Ensure dropdowns are on top */
       min-width: 150px; /* Minimum width */
       padding: 5px;
-      max-height: 250px; /* Limit height */
-      overflow-y: hidden; /* Disable scrolling */
-      font-family: var(--font-family);
+      max-height: 300px; /* Allow more height */
+      overflow-y: auto; /* Enable vertical scrolling */
+      scrollbar-width: none; /* Firefox - hide scrollbar */
+      -ms-overflow-style: none; /* IE/Edge - hide scrollbar */
+      font-family: "Fira Code", monospace !important; /* Force Fira Code for all dropdowns */
+      font-size: 12px !important; /* Force consistent font size */
+      color: var(--dropdown-text); /* Ensure text is visible */
+      /* Force visibility properties */
+      /* display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important; */
   }
   .dropdown.hidden {
       display: none !important;
+      /* visibility: hidden !important; */
   }
 
   /* Positioning Specific Dropdowns */
   #new-tab-dropdown { left: 5px; }
   #tabs-dropdown { left: 40px; /* Adjust as needed */ }
+  /* #help-popup { right: 125px; Adjust for visibility top: -305px; min-height: 250px; } */
+  #help-popup {
+      min-width: 220px;
+      padding: 8px 10px;
+      font-size: 12px;
+      position: absolute;
+      right: 40px;
+      top: -280px;
+      min-height: 250px;
+      z-index: 10010 !important;
+      background-color: var(--dropdown-bg);
+      border: 1px solid var(--input-border-color);
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
   #settings-dropdown { right: 40px; /* Adjust based on button positions */ }
 
   /* Dropdown Items / Options - Consistent Text Formatting */
@@ -399,10 +405,10 @@ body {
       border-radius: 3px;
       cursor: pointer;
       width: 100%; /* Make items fill width */
-      white-space: nowrap; /* Prevent wrapping */
+      white-space: nowrap; /* Keep on single line */
       font-size: 12px; /* Reduced size (was 13px) */
       font-weight: normal; /* No bold text */
-      font-family: var(--font-family);
+      font-family: "Fira Code", monospace !important; /* Force Fira Code for menu items */
       transition: background-color 0.1s ease; /* Add transition for hover */
   }
 
@@ -414,7 +420,7 @@ body {
       flex-direction: row;
       gap: 20px;
       justify-content: space-between;
-      font-family: var(--font-family);
+      font-family: "Fira Code", monospace !important; /* Force Fira Code */
   }
 
   .settings-option.active {
@@ -433,7 +439,7 @@ body {
       font-size: 12px; /* Reduced size */
       opacity: 0.7;
       font-weight: normal;
-      font-family: var(--font-family);
+      font-family: "Fira Code", monospace !important; /* Force Fira Code */
   }
 
   .settings-option-wrapper {
@@ -446,13 +452,27 @@ body {
   .font-size-option,
   .color-theme-option {
       font-size: 12px; /* Reduced size */
-      font-family: var(--font-family);
+      font-family: inherit; /* Inherit from parent */
   }
 
-  /* Specifically make font names smaller */
+  /* Font options should display in their actual font */
   .font-option {
       font-size: 11px; /* Small size for font names */
       padding: 5px 9px; /* Adjust padding slightly */
+      font-family: "Fira Code", monospace !important; /* Force Fira Code for all font options */
+  }
+
+  /* Each font option should show its actual font */
+  .font-option[data-font*="Arial"],
+  .font-option[data-font*="Verdana"],
+  .font-option[data-font*="Georgia"],
+  .font-option[data-font*="Times New Roman"],
+  .font-option[data-font*="Courier New"],
+  .font-option[data-font*="Open Sans"],
+  .font-option[data-font*="Montserrat"],
+  .font-option[data-font*="JetBrains Mono"],
+  .font-option[data-font*="Fira Code"] {
+      font-family: "Fira Code", monospace !important; /* Force Fira Code for all font options */
   }
 
   .font-size-option{
@@ -504,26 +524,42 @@ body {
 
   /* Settings Submenu */
   .subdropdown {
-      position: absolute;
-      top: auto !important;
-      bottom: calc(100% + 3px) !important;
-      left: calc(100% - 410px) !important;
-      margin-right: 5px;
-      background-color: var(--dropdown-bg);
-      border: 1px solid var(--input-border-color);
-      border-radius: 5px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      z-index: 10002; /* Above main dropdown */
-      min-width: 160px; /* Kept width as requested */
-      padding: 5px;
-      max-height: 300px; /* Allow slightly more height for more fonts */
-      overflow-y: auto; /* Enable scrolling if needed */
-      font-family: var(--font-family);
+    position: absolute;
+    top: auto !important;
+    bottom: calc(100% + 3px) !important;
+    left: calc(100% - 410px) !important;
+    margin-right: 5px;
+    background-color: var(--dropdown-bg);
+    border: 1px solid var(--input-border-color);
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10002; /* Above main dropdown */
+    min-width: 160px; /* Kept width as requested */
+    padding: 5px;
+    max-height: 300px; /* Allow slightly more height for more fonts */
+    overflow-y: auto; /* Enable scrolling if needed */
+    font-family: "Fira Code", monospace !important; /* Force Fira Code */
+    font-size: 12px !important; /* Force consistent font size */
+    scrollbar-width: none; /* Firefox - hide scrollbar */
+    -ms-overflow-style: none; /* IE/Edge - hide scrollbar */
+  }
+
+  .subdropdown.hidden { 
+      display: none !important;
+      /* visibility: hidden !important;
+      opacity: 0 !important; */
   }
 
   /* Make font dropdown specifically narrower */
   #font-dropdown {
       min-width: 150px; /* Narrower font dropdown */
+  }
+  
+  /* Make font size dropdown scrollable */
+  #font-size-dropdown {
+      max-height: 250px; /* Limit height */
+      overflow-y: auto; /* Make scrollable */
+      overflow-x: hidden;
   }
 
   /* New styles for dropdown headers and dividers */
@@ -544,8 +580,6 @@ body {
     background-color: rgba(128, 128, 128, 0.2); /* Grey divider */
     border: none;
   }
-
-  .subdropdown.hidden { display: none !important; }
 
   /* Color Theme and Intensity Controls */
   .color-theme-option {
@@ -627,54 +661,19 @@ body {
   body.four-square-mode .color-level-btn[data-level="-1"] {
       display: block;
   }
-
-  /* Note Preview Pop-up */
-  #note-preview-popup {
-    position: fixed; /* Use fixed positioning */
-    z-index: 10003; /* Above other dropdowns */
-    background-color: var(--text-box-bg); /* Use variable from target note */
-    color: var(--text-box-color); /* Use variable from target note */
-    border: 1px solid var(--input-border-color); /* Standard border */
-    border-radius: 5px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
-    padding: 10px;
-    max-width: 350px; /* Limit width */
-    max-height: 250px; /* Limit height */
-    overflow: hidden; /* Hide overflow initially */
-    font-size: 12px; /* Reduced size (was 13px) */
-    line-height: 1.4;
-    pointer-events: auto; /* Allow interaction like scrolling if needed */
-    box-sizing: border-box;
-  }
-
-  /* Fade out effect at the bottom */
-  .fade-out-bottom {
-    position: relative; /* Needed for the pseudo-element */
-  }
-
-  .fade-out-bottom::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40px; /* Height of the fade */
-    background: linear-gradient(to bottom, transparent, var(--text-box-bg));
-    pointer-events: none; /* Don't block clicks on text underneath */
-  }
+/*
 
   /* --- List Styling --- */
   .note-content-area ul,
   .note-content-area ol {
-    padding-left: 25px; /* Indentation for the list */
-    margin-top: 6px;    /* Reduce vertical space before the list */
-    margin-bottom: 6px; /* Reduce vertical space after the list */
+    padding-left: 18px; /* Reduce indentation to 2px from left */
+    margin-top: 2px;    /* Tighter vertical space before the list */
+    margin-bottom: 2px; /* Tighter vertical space after the list */
   }
 
   .note-content-area li {
-    padding-left: 5px;  /* Space between bullet/number and text */
-    margin-bottom: 2px; /* Reduce space between list items */
-    /* line-height: 1.3;  Reduce line height within the list item itself */ /* Removed for consistency */
+    padding-left: 2px;  /* Reduced space between bullet/number and text */
+    margin-bottom: 0px; /* No space between list items */
   }
 
   /* Remove default margins from paragraphs inside list items */
@@ -715,27 +714,27 @@ body {
   /* --- Checklist Styling --- */
   .note-content-area .checklist-item {
       display: flex;
-      align-items: flex-start;
-      margin: 2px 0;
-      /* line-height: 1.3; */ /* Removed for consistency */
+      align-items: center; /* Change from flex-start to center for vertical alignment */
+      margin: 0px 0; /* Remove vertical spacing */
       position: relative;
-      padding: 1px 0;
+      padding: 0px 0; /* Remove padding */
   }
 
   .note-content-area .checkbox {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 18px;
-      height: 18px;
-      margin-right: 6px;
+      width: 22px; /* Increase from 18px to 22px */
+      height: 22px; /* Increase from 18px to 22px */
+      margin-right: 6px; /* Keep the space after checkbox */
       flex-shrink: 0;
       cursor: pointer;
       user-select: none;
-      font-size: 14px; /* Slightly reduced checkbox symbol size */
+      font-size: 16px; /* Increase from 14px */
       color: var(--text-box-color);
       position: relative;
-      border-radius: 2px;
+      border-radius: 3px;
+      transform: translateY(1px); /* Slight adjustment to align better with text */
   }
 
   .note-content-area .checkbox.unchecked {
@@ -767,20 +766,6 @@ body {
       opacity: 0.65;
   }
 
-  /* Ensure lists have the tightest spacing */
-  .note-content-area ul,
-  .note-content-area ol {
-    padding-left: 20px; /* Slightly reduce indentation */
-    margin-top: 4px;    /* Tighter vertical space before the list */
-    margin-bottom: 4px; /* Tighter vertical space after the list */
-  }
-
-  .note-content-area li {
-    padding-left: 3px;  /* Less space between bullet/number and text */
-    margin-bottom: 1px; /* Tightest space between list items */
-    /* line-height: 1.25;  Tighter line height within the list item itself */ /* Removed for consistency */
-  }
-
   /* Selection Highlight */
   ::selection {
       background-color: var(--selection-color); /* Already soft */
@@ -789,10 +774,79 @@ body {
       background-color: var(--selection-color);
   }
 
-  /* Implicit Title Styling */
+  /* Implicit Title Styling - REMOVED */
+  /* 
   .note-content-area > .implicit-title {
       font-size: calc(var(--font-size) + 2px);
       font-weight: 600;
       margin-bottom: 0.4em;
-      display: block; /* Ensure it takes its own line if needed */
+      display: block; 
+  } */
+
+  .dropdown::-webkit-scrollbar { /* Chrome/Safari/Opera */
+    display: none; /* Hide scrollbar */
+  }
+
+  /* Blue hover for Help button */
+  #help-btn {
+      font-size: 14px;
+      font-weight: bold;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      margin-right: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background-color: var(--toolbar-button-hover-bg);
+      transition: all 0.2s ease;
+      opacity: 0.8;
+      cursor: pointer;
+  }
+
+  #help-btn:hover {
+      color: var(--hover-blue);
+      opacity: 1;
+      background-color: var(--toolbar-bg);
+  }
+
+  .help-section ul {
+      list-style-type: disc;
+      padding-left: 20px;
+  }
+
+  /* Custom text formatting styles */
+  .format-bold-large {
+      font-weight: bold;
+      font-size: calc(var(--font-size) + 2px) !important; /* Force font size to be larger than normal */
+  }
+  
+  .format-title {
+      font-weight: bold;
+      font-size: calc(var(--font-size) + 4px) !important; /* Force font size to be much larger */
+  }
+
+  .format-subtitle {
+      font-weight: bold;
+      font-size: calc(var(--font-size) + 1px) !important; /* Force font size to be slightly larger */
+      font-style: italic;
+      color: var(--text-box-color);
+      opacity: 0.8;
+  }
+
+  /* Fix for dropdowns in dark mode - force custom styles */
+  body.dark-mode .dropdown,
+  body.dark-mode .subdropdown {
+    background-color: #2e2e2e !important;
+    color: #ffffff !important;
+    border-color: #3e3e3e !important;
+  }
+  
+  /* Fix for dropdowns in light mode - force custom styles */
+  body:not(.dark-mode) .dropdown,
+  body:not(.dark-mode) .subdropdown {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #d0d7de !important;
   }

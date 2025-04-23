@@ -275,49 +275,61 @@ ipcMain.on('report-tab-name-change', (event, { tabId, newName }) => {
     broadcastToAllWindows('tab-name-updated', { tabId, newName }, event.sender.id);
 });
 
-// Handle request to create a new tab/window from UI
-ipcMain.handle('create-new-tab-window', async (event, options) => {
-    console.log("IPC: Received 'create-new-tab-window' with options:", options);
-    const { layout, colorTheme, colorLevel } = options;
-    const tabId = 'tab-' + Date.now();
-    const defaultSettings = (await UnifiedStorage.getGlobalSettings()) || {}; // Need getGlobalSettings
-    
-    // Get date for initial name
-    const now = new Date();
-    const initialName = `${layout === 'single' ? 'Single Note' : 'Four Square'}`;
+// Add a debounce mechanism to prevent rapid duplicate calls
+let lastTabCreationTime = 0;
+const TAB_CREATION_COOLDOWN = 1000; // 1 second cooldown
 
-    // Create the basic tab data structure
-    const newTabData = {
-        id: tabId,
-        layout: layout,
-        name: initialName, // Use new initial name
-        window: { // Default window state
-            x: undefined, y: undefined, // Let Electron decide position initially
-            width: 500, // Use fixed default size
-            height: 600, // Use fixed default size
-            isMaximized: false,
-            state: 'closed' // It's closed until the window is created
-        },
-        appearance: { // Inherit from global defaults
-            backgroundColor: "#ffffff", // Will be overridden by color theme
-            textColor: "#000000",       // Will be overridden by color theme
-            fontFamily: defaultSettings.defaultFontFamily || "'Open Sans', sans-serif",
-            fontSize: defaultSettings.defaultFontSize || "16px",
-            isDarkMode: defaultSettings.theme === 'dark' || false,
-            colorTheme: colorTheme || defaultSettings.defaultColorTheme || "default",
-            // For four-square, default to rainbow mode (level -1) unless explicitly specified
-            colorLevel: layout === 'four-square' && colorLevel === undefined ? -1 : 
-                        (colorLevel !== undefined ? colorLevel : (defaultSettings.defaultColorLevel || 1))
-        },
-        notes: layout === 'four-square'
-            ? ["", "", "", ""].map((content, i) => ({
-                id: `note-${i + 1}`, content: content, metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
-              }))
-            : [{ id: "note-1", content: "", metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() } }],
-        metadata: { created: new Date().toISOString(), modified: new Date().toISOString() }
-    };
-
+ipcMain.handle('create-new-tab-window', async (event, newTabOptions) => {
     try {
+        // Prevent rapid creation of tabs
+        const currentTime = Date.now();
+        if (currentTime - lastTabCreationTime < TAB_CREATION_COOLDOWN) {
+            console.log('Tab creation request ignored due to cooldown');
+            return { success: false, message: "Please wait before creating another tab" };
+        }
+        lastTabCreationTime = currentTime;
+
+        // Continue with normal tab creation logic
+        console.log("IPC: Received 'create-new-tab-window' with options:", newTabOptions);
+        const { layout, colorTheme, colorLevel } = newTabOptions;
+        const tabId = 'tab-' + Date.now();
+        const defaultSettings = (await UnifiedStorage.getGlobalSettings()) || {}; // Need getGlobalSettings
+        
+        // Get date for initial name
+        const now = new Date();
+        const initialName = `${layout === 'single' ? 'Single Note' : 'Four Square'}`;
+
+        // Create the basic tab data structure
+        const newTabData = {
+            id: tabId,
+            layout: layout,
+            name: initialName, // Use new initial name
+            window: { // Default window state
+                x: undefined, y: undefined, // Let Electron decide position initially
+                width: 500, // Use fixed default size
+                height: 600, // Use fixed default size
+                isMaximized: false,
+                state: 'closed' // It's closed until the window is created
+            },
+            appearance: { // Inherit from global defaults
+                backgroundColor: "#ffffff", // Will be overridden by color theme
+                textColor: "#000000",       // Will be overridden by color theme
+                fontFamily: defaultSettings.defaultFontFamily || "'Open Sans', sans-serif",
+                fontSize: defaultSettings.defaultFontSize || "16px",
+                isDarkMode: defaultSettings.theme === 'dark' || false,
+                colorTheme: colorTheme || defaultSettings.defaultColorTheme || "default",
+                // For four-square, default to rainbow mode (level -1) unless explicitly specified
+                colorLevel: layout === 'four-square' && colorLevel === undefined ? -1 : 
+                            (colorLevel !== undefined ? colorLevel : (defaultSettings.defaultColorLevel || 1))
+            },
+            notes: layout === 'four-square'
+                ? ["", "", "", ""].map((content, i) => ({
+                    id: `note-${i + 1}`, content: content, metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+                  }))
+                : [{ id: "note-1", content: "", metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() } }],
+            metadata: { created: new Date().toISOString(), modified: new Date().toISOString() }
+        };
+
         // Save the tab definition *before* creating the window
         await UnifiedStorage.addOrUpdateTab(newTabData);
         console.log(`IPC: Saved new tab ${tabId}. Now creating window.`);
