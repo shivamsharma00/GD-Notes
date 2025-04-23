@@ -16,10 +16,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
-        with: { node-version: '18', cache: 'npm' }
+        with:
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install deps
         run: npm ci
@@ -33,18 +36,21 @@ jobs:
             npm run build:mac
           fi
 
+      - name: List built files
+        run: ls -lh dist
+
       - name: Upload installer only
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-installer
-          path: |
-            dist/*.dmg
-            dist/*Setup.exe
+          path:
+            - dist/*.dmg
+            - dist/*Setup.exe
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'  # Ensure it only runs on push to main
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
