@@ -46,7 +46,7 @@ jobs:
           name: ${{ matrix.os }}-installer
           path: |
             dist/*.dmg
-            dist/*Setup.exe
+            dist/*.exe
 
   release:
     needs: build
