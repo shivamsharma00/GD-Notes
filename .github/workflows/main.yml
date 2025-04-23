@@ -39,11 +39,12 @@ jobs:
           path: |
             dist/*.dmg
             dist/*Setup.exe
-  
-  release: 
-    needs: build
-    runs-on: ubuntu-latest
-    steps: 
+
+      - name: Ensure tag exists
+        run: |
+          git tag -f latest
+          git push -f origin latest 
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with: { path: ./installers }
@@ -52,7 +53,6 @@ jobs:
         run: |
           mkdir -p dist
           find installers -type f \( -iname '*.dmg' -o -iname '*setup.exe' \) -exec cp {} dist/ \;
-  
       
       - name: Create / update "latest" release
         uses: softprops/action-gh-release@v2
