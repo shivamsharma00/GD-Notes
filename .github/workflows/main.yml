@@ -1,25 +1,26 @@
 name: Build and Release Desktop App
-# Trigger this workflow on pushes (like merges) to the main branch
+
 on:
   push:
     branches: [main]
-    
-permissions: { contents: write}
+
+permissions:
+  contents: write
 
 jobs:
-  build: 
-    strategy: 
+  build:
+    strategy:
       matrix:
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    
-    steps: 
+
+    steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      
+
       - uses: actions/setup-node@v4
         with: { node-version: '18', cache: 'npm' }
-        
+
       - name: Install deps
         run: npm ci
 
@@ -27,36 +28,46 @@ jobs:
         shell: bash
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            npm run build:win 
+            npm run build:win
           else
             npm run build:mac
           fi
-      
+
       - name: Upload installer only
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-installers
+          name: ${{ matrix.os }}-installer
           path: |
             dist/*.dmg
             dist/*Setup.exe
 
-      - name: Ensure tag exists
-        run: |
-          git tag -f latest
-          git push -f origin latest 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-        with: { path: ./installers }
+        with:
+          path: ./installers
 
-      - name: Move installers to release directory
+      - name: Move installers to dist
         run: |
           mkdir -p dist
           find installers -type f \( -iname '*.dmg' -o -iname '*setup.exe' \) -exec cp {} dist/ \;
-      
-      - name: Create / update "latest" release
+
+      - name: Ensure 'latest' tag exists
+        run: |
+          git fetch origin
+          git tag -f latest
+          git push -f origin latest
+
+      - name: Create or update "latest" GitHub release
         uses: softprops/action-gh-release@v2
-        with: 
+        with:
           tag_name: latest
           name: Latest Build
           draft: false
