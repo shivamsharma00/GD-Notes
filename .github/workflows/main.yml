@@ -37,6 +37,7 @@ jobs:
           fi
 
       - name: List built files
+        shell: bash
         run: ls -lh dist
 
       - name: Upload installer only
