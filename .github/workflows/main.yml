@@ -65,7 +65,7 @@ jobs:
       - name: Move installers to dist
         run: |
           mkdir -p dist
-          find installers -type f \( -iname '*.dmg' -o -iname '*setup.exe' \) -exec cp {} dist/ \;
+          find installers -type f \( -iname '*.dmg' -o -iname '*.exe' \) -exec cp {} dist/ \;
 
       - name: Ensure 'latest' tag exists
         run: |
