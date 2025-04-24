@@ -10,17 +10,14 @@
     "build:mac:mas": "electron-builder --mac mas --publish never"
   },
   "build": {
-    "appId": "com.galeetch.GD-Notes",
+    "appId": "com.GD-Notes",
     "mac": {
       "category": "public.app-category.utilities",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "icon": "build/icons/icon.icns",
-      "target": [
-        "dmg",
-        "zip"
-      ]
+      "target": ["dmg"]
     },
     "win": {
       "icon": "build/icons/icon.ico",
