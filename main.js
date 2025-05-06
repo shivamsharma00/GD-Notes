@@ -20,6 +20,7 @@ function broadcastToAllWindows(channel, data, senderWebContentsId = null) {
     });
 }
 
+
 // Create a new window or focus an existing one for a tab
 async function createWindowForTab(tabData) {
     console.log("Creating/Focusing window for tab:", tabData.id);
