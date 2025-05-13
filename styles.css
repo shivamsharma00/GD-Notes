@@ -75,7 +75,7 @@ body {
     margin-bottom: 1px; /* Space before status bar */
     border-radius: var(--border-radius) var(--border-radius) 0 0; /* Curved top edges */
     background-color: transparent; /* Make container transparent */
-    padding-bottom: 25px; /* Space for the status bar (height + border) */
+    /* padding-bottom: 25px; /* Space for the status bar (height + border) */
     box-sizing: border-box; /* Include padding in height calculation */
   }
 
@@ -83,6 +83,7 @@ body {
   .note-content-area {
     border: 0px solid transparent; /* Transparent border */
     padding: 10px;
+    padding-bottom: 25px;
     background-color: var(--text-box-bg); /* Use variable */
     color: var(--text-box-color);       /* Use variable */
     font-size: var(--font-size);        /* Use variable */
@@ -207,7 +208,7 @@ body {
 
   /* Status Bar */
   #status-bar {
-    height: 24px; /* Slightly taller for easier hovering */
+    height: 30px; /* Slightly taller for easier hovering */
     background-color: var(--title-bar-color);
     display: flex;
     justify-content: space-between;
@@ -276,7 +277,8 @@ body {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 4px;
+    /* border-radius: 6px; */
     margin: 0; /* Reset margin */
     color: var(--text-color);
     -webkit-app-region: no-drag; /* Ensure buttons are clickable */
@@ -286,8 +288,8 @@ body {
   }
 
   button img {
-      width: 14px;
-      height: 14px;
+      width: 20px;
+      height: 20px;
       filter: var(--icon-filter);
       transition: filter 0.2s ease;
   }
@@ -299,6 +301,7 @@ body {
   #minimize-btn:hover img {
       /* Sky blue hover for most buttons */
       filter: brightness(0) saturate(100%) invert(55%) sepia(83%) saturate(1622%) hue-rotate(175deg) brightness(98%) contrast(89%);
+      /* background-color: #ffffff; */
   }
   
   /* Keep original style for tabs dropdown */
